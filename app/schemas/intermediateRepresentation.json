@@ -1,0 +1,112 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "definitions": {
+    "Condition": {
+      "type": "object",
+      "properties": {
+        "k": { "type": "string" },
+        "v": { "type": "string" },
+        "op": {
+          "type": "string",
+          "enum": ["=", "not", ">", "in"]
+        },
+        "n": { "type": "string" }
+      },
+      "required": ["k", "v", "op", "n"]
+    },
+    "Cluster": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "conds": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/Condition" }
+        },
+        "t": { "type": "string", "enum": ["cluster"] },
+        "minPts": { "type": "number" },
+        "maxDist": { "type": "number" }
+      },
+      "required": ["id", "conds", "t", "minPts", "maxDist"]
+    },
+    "NWR": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "n": { "type": "string" },
+        "conds": {
+          "type": "array",
+          "items": {
+            "anyOf": [{ "$ref": "#/definitions/Condition" }]
+          }
+        },
+        "t": { "type": "string", "const": "nwr" }
+      },
+      "required": ["id", "n", "conds", "t"]
+    },
+    "Group": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "number" },
+        "t": { "type": "string" },
+        "els": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              { "$ref": "#/definitions/Cluster" },
+              { "$ref": "#/definitions/NWR" }
+            ]
+          }
+        }
+      },
+      "required": ["id", "t", "els"]
+    }
+  },
+  "type": "object",
+  "properties": {
+    "a": {
+      "type": "object",
+      "properties": {
+        "t": { "type": "string", "enum": ["bbox", "polygon"] },
+        "geom": {}
+      },
+      "required": ["t", "geom"]
+    },
+    "ns": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          { "$ref": "#/definitions/Cluster" },
+          { "$ref": "#/definitions/NWR" },
+          { "$ref": "#/definitions/Group" }
+        ]
+      }
+    },
+    "es": {
+      "type": "array",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "src": { "type": "number" },
+              "tgt": { "type": "number" },
+              "t": { "type": "string", "const": "dist" },
+              "dist": { "type": "number" }
+            },
+            "required": ["src", "tgt", "t", "dist"]
+          },
+          {
+            "type": "object",
+            "properties": {
+              "src": { "type": "number" },
+              "tgt": { "type": "number" },
+              "t": { "type": "string", "const": "in" }
+            },
+            "required": ["src", "tgt", "t"]
+          }
+        ]
+      }
+    }
+  },
+  "required": ["a", "ns", "es"]
+}
