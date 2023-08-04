@@ -1,10 +1,13 @@
-from .subqueries.construct import constructSubqueries
+from .ctes.construct import constructCTEs
 from .unnest import unnest
 from .utils import cleanQuery
+from .relationalCTE import constructRelationalCTEs
 
 def constructQuery(intermediateRepresentation):
-    subqueries = constructSubqueries(intermediateRepresentation)
-    unnestedQuery = unnest(subqueries)
+    ctes = constructCTEs(intermediateRepresentation)
+    relationalctes = constructRelationalCTEs(intermediateRepresentation)
+    ctes.append(relationalctes)
+    unnestedQuery = unnest(ctes)
     cleanedQuery = cleanQuery(unnestedQuery)
     
     return cleanedQuery

@@ -1,19 +1,23 @@
-def constructClusterSubquery(node):
+from .constructCTEWhereClause import constructCTEWhereClause
+
+
+def constructClusterCTE(node, area):
     eps = node.get('maxDist', 50)
     minpoints = node.get('minPts', 2)
     setid = node.get('id', 'id')
     setname = node.get('n', 'name')
     clusterName = f"cluster_{setid}_{setname}"
     clusterElementsName = f"clusterElements_{setid}_{setname}"
+    conditions = constructCTEWhereClause(node.get('flts', []), area)
 
-    subquery = f"""WITH {clusterName} AS (
+    cte = f"""{clusterName} AS (
                 SELECT
                     ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps}, minpoints := {minpoints}) OVER () AS cluster_id,
                     node_id,
                     geom
                 FROM nodes
-                WHERE 
-                    tags->>'amenity'='cafe'
+                WHERE
+                    {conditions}
                 ),
                 {clusterElementsName} AS (
                 SELECT
@@ -26,4 +30,4 @@ def constructClusterSubquery(node):
                 WHERE cluster_id IS NOT NULL
                 GROUP BY cluster_id)
                 SELECT * FROM {clusterElementsName}""" 
-    return subquery
+    return cte
