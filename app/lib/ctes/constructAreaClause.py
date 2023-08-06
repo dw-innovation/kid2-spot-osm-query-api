@@ -22,7 +22,7 @@ def constructAreaFilter(area):
     elif type == 'polygon':
         return constructPolygonFilter(area.get('plygn', None))
     elif type == 'area':
-        return constructAreaGeoJSONFilter(area.get('name', None))
+        return constructAreaGeoJSONFilter(area.get('n', None))
 
     return None
 
@@ -45,7 +45,7 @@ def constructPolygonFilter(polygon):
 
 def constructAreaGeoJSONFilter(area_name):
     """Constructs a GeoJSON area filter for the WHERE clause."""
-    
+
     if area_name:
         url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
         response = requests.get(url)
