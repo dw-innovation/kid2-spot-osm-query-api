@@ -1,0 +1,50 @@
+{
+  "a": {
+    "t": "bbox",
+    "bbox": [12.803879, 52.311417, 13.842087, 52.624727]
+  },
+  "ns": [
+    {
+      "id": 1,
+      "t": "cluster",
+      "n": "italianRestaurants",
+      "minPts": 2,
+      "maxDist": 500,
+      "flts": [
+        {
+          "k": "amenity",
+          "v": "restaurant",
+          "op": "=",
+          "n": "restaurant"
+        },
+        {
+          "k": "cuisine",
+          "v": "italian",
+          "op": "~",
+          "n": "italianCuisine"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "t": "nwr",
+      "n": "bars",
+      "flts": [
+        {
+          "k": "amenity",
+          "v": "bar",
+          "op": "=",
+          "n": "bar"
+        }
+      ]
+    }
+  ],
+  "es": [
+    {
+      "src": 1,
+      "tgt": 2,
+      "t": "dist",
+      "dist": 50
+    }
+  ]
+}
