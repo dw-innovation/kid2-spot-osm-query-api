@@ -66,10 +66,26 @@
     "a": {
       "type": "object",
       "properties": {
-        "t": { "type": "string", "enum": ["bbox", "polygon"] },
-        "geom": {}
+        "t": { "type": "string", "enum": ["bbox", "polygon", "area"] },
+        "bbox": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          }
+        },
+        "plyg": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "array",
+              "items": { "type": "number" }
+            }
+          }
+        },
+        "n": { "type": "string" }
       },
-      "required": ["t", "geom"]
+      "required": ["t"]
     },
     "ns": {
       "type": "array",
