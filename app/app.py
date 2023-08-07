@@ -9,6 +9,8 @@ from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
 from collections import Counter
 
+environment = os.getenv("ENVIRONMENT") or "production"
+
 app = Flask(__name__)
 CORS(app)
 
@@ -54,7 +56,10 @@ def runOSMQuery():
         distinct_setnames = list({result['setname'] for result in results})
         setname_counts = dict(Counter(result['setname'] for result in results))
 
-        return jsonify({'geojson': geojson, 'sets': {'distinctSets': distinct_setnames, 'stats': setname_counts}}), 200
+        if environment == "development":
+            return jsonify({'geojson': geojson, 'sets': {'distinctSets': distinct_setnames, 'stats': setname_counts, 'query': query}}), 200
+        else:
+            return jsonify({'geojson': geojson, 'sets': {'distinctSets': distinct_setnames, 'stats': setname_counts}}), 200
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
