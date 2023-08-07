@@ -1,4 +1,4 @@
-from .constructCTEWhereClause import constructCTEWhereClause
+from .constructWhereClause import constructCTEWhereClause
 
 def constructClusterCTE(node, area):
     """
