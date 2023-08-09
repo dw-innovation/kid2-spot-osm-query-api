@@ -1,6 +1,7 @@
-from .constructWhereClause import constructCTEWhereClause
+from .construct_where_clause import construct_CTE_where_clause
 
-def constructClusterCTE(node, area):
+
+def construct_cluster_CTE(node, area):
     """
     This function constructs a common table expression (CTE) for clustering based on the given node and area.
 
@@ -10,27 +11,27 @@ def constructClusterCTE(node, area):
     :type area: str, int or float
     :return: A SQL query string representing a CTE for clustering.
     :rtype: str
-    
+
     """
     try:
         # Get distance and minpoints from node
-        eps = node.get('maxDist', 50)
-        minpoints = node.get('minPts', 2)
+        eps = node.get("maxDist", 50)
+        min_points = node.get("minPts", 2)
 
         # Create setid and setname
-        setid = node.get('id', 'id')
-        setname = node.get('n', 'name')
+        set_id = node.get("id", "id")
+        set_name = node.get("n", "name").replace(" ", "_")
 
         # Create cluster name
-        clusterName = f"cluster_{setid}_{setname}"
+        cluster_name = f"cluster_{set_id}_{set_name}"
 
         # Create WHERE clause
-        filters = constructCTEWhereClause(node.get('flts', []), area)
+        filters = construct_CTE_where_clause(node.get("flts", []), area)
 
-        cte = f"""{clusterName} AS (
+        cte = f"""{cluster_name} AS (
                     WITH clusters AS (
                         SELECT
-                            ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps}, minpoints := {minpoints}) OVER () AS cluster_id,
+                            ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps}, minpoints := {min_points}) OVER () AS cluster_id,
                             node_id,
                             geom
                         FROM nodes
@@ -38,16 +39,16 @@ def constructClusterCTE(node, area):
                             {filters}
                         )
                     SELECT
-                        'cluster_' || '{setid}_' || cluster_id AS id,
+                        'cluster_' || '{set_id}_' || cluster_id AS id,
                         ST_Centroid(ST_Collect(geom)) AS geom,
                         ARRAY_AGG(node_id) AS nodes,
-                        '{setid}' AS setid,
-                        '{setname}' AS setname
+                        '{set_id}' AS setid,
+                        '{set_name}' AS setname
                     FROM clusters
                     WHERE cluster_id IS NOT NULL
                     GROUP BY cluster_id
                     )"""
-        
+
         return cte
 
     except Exception as e:

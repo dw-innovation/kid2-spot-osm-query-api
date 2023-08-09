@@ -1,14 +1,15 @@
-from .constructGroupCTE import constructGroupCTE
-from .constructNWRCTE import constructNWRCTE
-from .constructClusterCTE import constructClusterCTE
+from .construct_group_CTE import construct_group_CTE
+from .construct_NWR_CTE import construct_NWR_CTE
+from .construct_cluster_CTE import construct_cluster_CTE
 
-def constructCTEs(intermediateRepresentation):
+
+def construct_ctes(intermediate_representation):
     """
-    Constructs a list of Common Table Expressions (CTEs) using the nodes and 
+    Constructs a list of Common Table Expressions (CTEs) using the nodes and
     area data from the intermediate representation of a SQL query.
 
-    :param intermediateRepresentation: A dict containing "ns" (nodes) and "a" (area).
-    :type intermediateRepresentation: dict
+    :param intermediate_representation: A dict containing "ns" (nodes) and "a" (area).
+    :type intermediate_representation: dict
     :return: A list of CTEs represented as strings.
     :rtype: list
     """
@@ -17,8 +18,8 @@ def constructCTEs(intermediateRepresentation):
     ctes = []
 
     # Extract nodes and area from the intermediate representation
-    nodes = intermediateRepresentation["ns"]
-    area = intermediateRepresentation["a"]
+    nodes = intermediate_representation["ns"]
+    area = intermediate_representation["a"]
 
     # Iterate over the nodes to construct each CTE
     for i in range(len(nodes)):
@@ -51,8 +52,8 @@ def constructCTE(node, area):
 
     # Depending on the type of the node, construct the appropriate type of CTE
     if type == "cluster":
-        return constructClusterCTE(node, area)
+        return construct_cluster_CTE(node, area)
     elif type == "nwr":
-        return constructNWRCTE(node, area)
+        return construct_NWR_CTE(node, area)
     elif type == "group":
-        return constructGroupCTE(node, area)
+        return construct_group_CTE(node, area)

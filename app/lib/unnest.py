@@ -1,17 +1,18 @@
-from .utils import cleanQuery
+from .utils import clean_query
+
 
 def unnest(ctes):
     """
-    This function takes a list of common table expressions (CTEs), 
-    adds an UnnestedCTE to this list, and constructs a PostgreSQL query 
+    This function takes a list of common table expressions (CTEs),
+    adds an UnnestedCTE to this list, and constructs a PostgreSQL query
     that unnests the nodes and joins the result with the nodes table.
-    
+
     :param ctes: list of common table expressions (CTEs) to include in the query
     :type ctes: List[str]
     :return: SQL query string
     :rtype: str
     """
-    
+
     try:
         # Construct an UnnestedCTE from the RelationalCTE
         unnestCTE = """UnnestedCTE AS (
@@ -27,7 +28,7 @@ def unnest(ctes):
         ctes.append(unnestCTE)
 
         # Clean the CTEs and concatenate them into a single query
-        ctes_str = ",\n".join([cleanQuery(cte) for cte in ctes])
+        ctes_str = ",\n".join([clean_query(cte) for cte in ctes])
 
         # Limit to distinct rows and join with the nodes table to get the tags and geometry
         concatenated = f"""{ctes_str}
@@ -36,7 +37,7 @@ def unnest(ctes):
                             UnnestedCTE
                         JOIN 
                             nodes ON UnnestedCTE.node_id = nodes.node_id;"""
-        
+
         return concatenated
 
     except Exception as e:

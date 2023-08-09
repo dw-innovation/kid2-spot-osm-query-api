@@ -1,8 +1,9 @@
-from .constructWhereClause import constructCTEWhereClause
+from .construct_where_clause import construct_CTE_where_clause
 
-def constructNWRCTE(node, area):
+
+def construct_NWR_CTE(node, area):
     """
-    Function to construct a Common Table Expression (CTE) for a SQL query 
+    Function to construct a Common Table Expression (CTE) for a SQL query
     based on a provided node and area.
 
     :param node: A dictionary containing parameters for CTE construction.
@@ -14,27 +15,27 @@ def constructNWRCTE(node, area):
     """
 
     # Extract setid and setname from the node, default to 'id' and 'name' if not provided
-    setid = node.get('id', 'id')
-    setname = node.get('n', 'name')
+    set_id = node.get("id", "id")
+    set_name = node.get("n", "name").replace(" ", "_")
 
     # Construct the CTE name
-    ctename = f"nwr_{setid}_{setname}"
+    CTE_name = f"nwr_{set_id}_{set_name}"
 
     # Create the WHERE clause of the SQL query
-    filters = constructCTEWhereClause(node.get('flts', []), area)
+    filters = construct_CTE_where_clause(node.get("flts", []), area)
 
     # Construct the CTE
-    cte = f"""{ctename} AS (
+    cte = f"""{CTE_name} AS (
                 SELECT 
-                    'nwr_' || '{setid}_' || node_id AS id,
+                    'nwr_' || '{set_id}_' || node_id AS id,
                     geom,
                     ARRAY_AGG(node_id) AS nodes,
-                    '{setid}' AS setid,
-                    '{setname}' AS setname
+                    '{set_id}' AS setid,
+                    '{set_name}' AS setname
                 FROM
                     nodes
                 WHERE
                     {filters}
-                GROUP BY node_id, geom)""" 
-    
+                GROUP BY node_id, geom)"""
+
     return cte
