@@ -36,6 +36,27 @@ def teardown(e=None):
     close_db(e)
 
 
+@app.route("/get-osm-query", methods=["POST"])
+def get_osm_query():
+    data = request.json
+
+    try:
+        validate(data, schema)
+    except exceptions.ValidationError as e:
+        return jsonify({"error": str(e)}), 400
+
+    try:
+        query = constructor.construct_query_from_graph(data)
+        query = query.replace("\n", " ")
+
+        response = {"query": query}
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/run-osm-query", methods=["POST"])
 def run_osm_query():
     data = request.json
