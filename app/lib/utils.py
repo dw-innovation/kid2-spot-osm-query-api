@@ -1,3 +1,4 @@
+import re
 from shapely import wkb
 from shapely.geometry import mapping
 
@@ -51,3 +52,44 @@ def results_to_geojson(results):
     }
 
     return geojson
+
+
+def distance_to_meters(distance_str):
+    """
+    Convert distance with unit to meters.
+    """
+
+    # Conversion rates for different units
+    conversion_rates = {
+        "m": 1,
+        "km": 1000,
+        "ft": 0.3048,
+        "mile": 1609.34,
+        "yd": 0.9144,
+        "in": 0.0254,
+        "cm": 0.01,
+        "mm": 0.001,
+    }
+    # Use regex to extract value and unit
+    match = re.match(r"(?P<value>[\d.]+)\s?(?P<unit>[a-zA-Z]*)", distance_str)
+    if not match:
+        raise ValueError(f"Invalid format: {distance_str}")
+
+    value_str = match.group("value")
+    unit = match.group("unit").lower()
+
+    # If there's no unit, return the numeric value as a string
+    if not unit:
+        return str(float(value_str))
+
+    # Checking if unit is valid
+    if unit not in conversion_rates:
+        raise ValueError(f"Unknown distance unit: {unit}")
+
+    value = float(value_str)
+
+    ## Converting to meters
+
+    distance_meters = str(value * conversion_rates[unit])
+
+    return distance_meters
