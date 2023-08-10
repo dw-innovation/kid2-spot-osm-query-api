@@ -43,6 +43,7 @@ def get_osm_query():
     try:
         validate(data, schema)
     except exceptions.ValidationError as e:
+        print(e)
         return jsonify({"error": str(e)}), 400
 
     try:
@@ -79,17 +80,19 @@ def run_osm_query():
         geojson = results_to_geojson(results)
         distinct_set_names = list({result["setname"] for result in results})
         set_name_counts = dict(Counter(result["setname"] for result in results))
+        area_value = getattr(g, "area", None)
 
         response = {
             "results": geojson,
             **({"query": query} if environment == "development" else {}),
-            **({"area": g.area} if g.area is not None else {}),
+            **({"area": area_value} if area_value is not None else {}),
             "sets": {"distinct_sets": distinct_set_names, "stats": set_name_counts},
         }
 
         return jsonify(response), 200
 
     except Exception as e:
+        print(e)
         return jsonify({"error": str(e)}), 500
 
 
