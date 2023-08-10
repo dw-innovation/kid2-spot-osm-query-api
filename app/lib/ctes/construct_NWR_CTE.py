@@ -16,10 +16,10 @@ def construct_NWR_CTE(node, area):
 
     # Extract setid and setname from the node, default to 'id' and 'name' if not provided
     set_id = node.get("id", "id")
-    set_name = node.get("n", "name").replace(" ", "_")
+    set_name = node.get("n", "name")
 
     # Construct the CTE name
-    CTE_name = f"nwr_{set_id}_{set_name}"
+    CTE_name = f"nwr_{set_id}_{set_name}".replace(" ", "_")
 
     # Create the WHERE clause of the SQL query
     filters = construct_CTE_where_clause(node.get("flts", []), area)

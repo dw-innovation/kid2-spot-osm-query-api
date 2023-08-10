@@ -20,10 +20,10 @@ def construct_cluster_CTE(node, area):
 
         # Create setid and setname
         set_id = node.get("id", "id")
-        set_name = node.get("n", "name").replace(" ", "_")
+        set_name = node.get("n", "name")
 
         # Create cluster name
-        cluster_name = f"cluster_{set_id}_{set_name}"
+        cluster_name = f"cluster_{set_id}_{set_name}".replace(" ", "_")
 
         # Create WHERE clause
         filters = construct_CTE_where_clause(node.get("flts", []), area)

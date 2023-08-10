@@ -29,18 +29,18 @@ def construct_relation(edge, nodes):
         # Find the source node and its type from the nodes list
         src_type = next((item for item in nodes if item["id"] == source_id), None)["t"]
         src_set = next((item for item in nodes if item["id"] == source_id), None)
-        src_CTE_Name = f"{src_type}_{src_set['id']}_{src_set['n']}"
+        src_CTE_name = f"{src_type}_{src_set['id']}_{src_set['n']}".replace(" ", "_")
 
         # Find the target node and its type from the nodes list
         tgt_type = next((item for item in nodes if item["id"] == target_id), None)["t"]
         tgt_set = next((item for item in nodes if item["id"] == target_id), None)
-        tgt_CTE_mame = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}"
+        tgt_CTE_name = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}".replace(" ", "_")
 
         # Construct the relation query using the defined CTE names and distance
         relational_query = f"""WITH {relation_CTE_name} AS (
-                                SELECT * FROM {src_CTE_Name}
+                                SELECT * FROM {src_CTE_name}
                                 UNION ALL
-                                SELECT * FROM {tgt_CTE_mame})
+                                SELECT * FROM {tgt_CTE_name})
                             SELECT * FROM {relation_CTE_name} AS c1
                             WHERE EXISTS (
                                 SELECT 1 
