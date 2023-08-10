@@ -1,3 +1,6 @@
+from ..utils import distance_to_meters
+
+
 def construct_relational_CTEs(intermediate_representation):
     # Extract nodes and edges from the input intermediate representation
     nodes = intermediate_representation["ns"]
@@ -25,6 +28,7 @@ def construct_relation(edge, nodes):
         # Create relation and source/target CTE names based on source_id and target_id
         relation_CTE_name = f"Dist_{source_id}_{target_id}"
         dist = edge["dist"]
+        dist_in_meters = distance_to_meters(dist)
 
         # Find the source node and its type from the nodes list
         src_type = next((item for item in nodes if item["id"] == source_id), None)["t"]
@@ -45,7 +49,7 @@ def construct_relation(edge, nodes):
                             WHERE EXISTS (
                                 SELECT 1 
                                 FROM {relation_CTE_name} AS c2
-                                WHERE ST_DWithin(ST_Transform(c1.geom,3857), ST_Transform(c2.geom,3857), {dist})
+                                WHERE ST_DWithin(ST_Transform(c1.geom,3857), ST_Transform(c2.geom,3857), {dist_in_meters})
                                 AND c1.setid <> c2.setid
                             )"""
 

@@ -1,3 +1,4 @@
+from ..utils import distance_to_meters
 from .construct_where_clause import construct_CTE_where_clause
 
 
@@ -14,8 +15,10 @@ def construct_cluster_CTE(node, area):
 
     """
     try:
-        # Get distance and minpoints from node
-        eps = node.get("maxDist", 50)
+        # Get distance and minpoints from node and convert to meters
+        eps = node.get("maxDist", "50")
+        eps_in_meters = distance_to_meters(eps)
+
         min_points = node.get("minPts", 2)
 
         # Create setid and setname
@@ -31,7 +34,7 @@ def construct_cluster_CTE(node, area):
         cte = f"""{cluster_name} AS (
                     WITH clusters AS (
                         SELECT
-                            ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps}, minpoints := {min_points}) OVER () AS cluster_id,
+                            ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps_in_meters}, minpoints := {min_points}) OVER () AS cluster_id,
                             node_id,
                             geom
                         FROM nodes
