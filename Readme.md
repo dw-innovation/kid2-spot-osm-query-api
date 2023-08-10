@@ -11,7 +11,7 @@ Ensure you've initiated and are running the Overpass++ Postgres instance. This c
 1. Build the Docker container:
 
 ```bash
-docker build . -t osmquery
+docker build . -t osmapi
 ```
 2. Run the container, ensuring that you replace the placeholder values for environment variables as necessary:
 
@@ -22,7 +22,7 @@ docker run -p 5000:5000 \
 -e DATABASE_PASSWORD='postgres' \
 -e DATABASE_HOST='host.docker.internal' \
 -e DATABASE_PORT='5432' \
-osmquery
+osmapi
 ```
 
 ## API Endpoints
