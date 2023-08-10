@@ -24,7 +24,7 @@
         },
         "t": { "type": "string", "enum": ["cluster"] },
         "minPts": { "type": "number" },
-        "maxDist": { "type": "number" }
+        "maxDist": { "type": "string" }
       },
       "required": ["id", "flts", "t", "minPts", "maxDist"]
     },
@@ -107,7 +107,7 @@
               "src": { "type": "number" },
               "tgt": { "type": "number" },
               "t": { "type": "string", "const": "dist" },
-              "dist": { "type": "number" }
+              "dist": { "type": "string" }
             },
             "required": ["src", "tgt", "t", "dist"]
           },
