@@ -59,6 +59,7 @@ def distance_to_meters(distance_str):
         "km": 1000,
         "ft": 0.3048,
         "mile": 1609.34,
+        "mi": 1609.34,
         "yd": 0.9144,
         "in": 0.0254,
         "cm": 0.01,
