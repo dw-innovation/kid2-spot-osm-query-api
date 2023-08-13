@@ -31,12 +31,6 @@ def results_to_geojson(results):
 
         # Remove 'geom' key from the result before assigning to properties since it's not needed in the properties
         del result["geom"]
-
-        # Remove 'id' key from the result before assigning to properties since it's not needed in the properties
-        if "id" in result:
-            result["osm_id"] = result["node_id"]
-
-        del result["node_id"]
         del result["id"]
 
         feature = {
@@ -93,3 +87,45 @@ def distance_to_meters(distance_str):
     distance_meters = str(value * conversion_rates[unit])
 
     return distance_meters
+
+
+def determine_utm_epsg(latitude, longitude):
+    """
+    Determine UTM zone EPSG for a given latitude and longitude.
+    :param latitude: float
+    :param longitude: float
+    :return: int, UTM EPSG
+    """
+    if -180 <= longitude <= 180:
+        zone_number = int((longitude + 180) / 6) + 1
+        if -80 <= latitude < 0:
+            return 32700 + zone_number  # Southern Hemisphere
+        elif 0 <= latitude <= 84:
+            return 32600 + zone_number  # Northern Hemisphere
+        else:
+            raise ValueError(
+                "Latitude out of range. UTM only supports between 80°S and 84°N."
+            )
+    else:
+        raise ValueError("Longitude out of range.")
+
+
+def construct_primitives_CTEs(query):
+    primitives = ["node", "way", "relation"]
+
+    cte_query_parts = [
+        f"""
+        {primitive}s_CTE AS (
+            {query.replace("[primitive]", primitive)}
+        )"""
+        for primitive in primitives
+    ]
+
+    concatenated_ctes = "WITH " + ", ".join(cte_query_parts)
+    union_clauses = " UNION ALL ".join(
+        f"SELECT * FROM {primitive}s_CTE" for primitive in primitives
+    )
+
+    cte = f"""{concatenated_ctes}{union_clauses}"""
+
+    return cte

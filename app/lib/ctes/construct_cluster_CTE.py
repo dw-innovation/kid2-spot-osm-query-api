@@ -1,4 +1,4 @@
-from ..utils import distance_to_meters
+from ..utils import construct_primitives_CTEs, distance_to_meters
 from .construct_where_clause import construct_CTE_where_clause
 
 
@@ -31,26 +31,30 @@ def construct_cluster_CTE(node, area):
         # Create WHERE clause
         filters = construct_CTE_where_clause(node.get("flts", []), area)
 
-        cte = f"""{cluster_name} AS (
-                    WITH clusters AS (
+        query = f"""WITH clusters AS (
                         SELECT
                             ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps_in_meters}, minpoints := {min_points}) OVER () AS cluster_id,
-                            node_id,
+                            [primitive]_id,
                             geom
-                        FROM nodes
+                        FROM [primitive]s
                         WHERE
                             {filters}
                         )
                     SELECT
                         'cluster_' || '{set_id}_' || cluster_id AS id,
                         ST_Centroid(ST_Collect(geom)) AS geom,
-                        ARRAY_AGG(node_id) AS nodes,
+                        ARRAY_AGG([primitive]_id) AS osm_ids,
                         '{set_id}' AS setid,
                         '{set_name}' AS setname
                     FROM clusters
                     WHERE cluster_id IS NOT NULL
-                    GROUP BY cluster_id
-                    )"""
+                    GROUP BY cluster_id"""
+
+        # Construct the CTE
+        primitives_cte = construct_primitives_CTEs(query)
+
+        # Construct the CTE
+        cte = f"""{cluster_name} AS ({primitives_cte})"""
 
         return cte
 

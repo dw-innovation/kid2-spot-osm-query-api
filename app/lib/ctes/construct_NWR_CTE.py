@@ -1,3 +1,4 @@
+from lib.utils import construct_primitives_CTEs
 from .construct_where_clause import construct_CTE_where_clause
 
 
@@ -24,18 +25,21 @@ def construct_NWR_CTE(node, area):
     # Create the WHERE clause of the SQL query
     filters = construct_CTE_where_clause(node.get("flts", []), area)
 
-    # Construct the CTE
-    cte = f"""{CTE_name} AS (
-                SELECT 
-                    'nwr_' || '{set_id}_' || node_id AS id,
+    query = f"""SELECT 
+                    'nwr_' || '{set_id}_' || [primitive]_id AS id,
                     geom,
-                    ARRAY_AGG(node_id) AS nodes,
+                    ARRAY_AGG([primitive]_id) AS osm_ids,
                     '{set_id}' AS setid,
                     '{set_name}' AS setname
                 FROM
-                    nodes
+                    [primitive]s
                 WHERE
                     {filters}
-                GROUP BY node_id, geom)"""
+                GROUP BY [primitive]_id, geom"""
+
+    primitives_cte = construct_primitives_CTEs(query)
+
+    # Construct the CTE
+    cte = f"""{CTE_name} AS ({primitives_cte})"""
 
     return cte

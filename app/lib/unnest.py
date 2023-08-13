@@ -18,7 +18,7 @@ def unnest(ctes):
         unnestCTE = """UnnestedCTE AS (
                         SELECT
                             id,
-                            unnest(nodes) AS node_id,
+                            unnest(osm_ids) AS osm_id,
                             setid,
                             setname
                         FROM
@@ -32,11 +32,18 @@ def unnest(ctes):
 
         # Limit to distinct rows and join with the nodes table to get the tags and geometry
         concatenated = f"""{ctes_str}
-                        SELECT DISTINCT UnnestedCTE.id, UnnestedCTE.node_id, UnnestedCTE.setid, UnnestedCTE.setname, nodes.tags, nodes.geom
+                        SELECT DISTINCT UnnestedCTE.id, UnnestedCTE.osm_id, UnnestedCTE.setid, UnnestedCTE.setname,
+                            COALESCE(nodes.tags, ways.tags, relations.tags) AS tags,
+                            COALESCE(nodes.geom, ways.geom, relations.geom) AS geom
                         FROM 
                             UnnestedCTE
-                        JOIN 
-                            nodes ON UnnestedCTE.node_id = nodes.node_id;"""
+                        LEFT JOIN 
+                            nodes ON UnnestedCTE.osm_id = nodes.node_id
+                        LEFT JOIN 
+                            ways ON UnnestedCTE.osm_id = ways.way_id
+                        LEFT JOIN 
+                            relations ON UnnestedCTE.osm_id = relations.relation_id
+                        WHERE nodes.node_id IS NOT NULL OR ways.way_id IS NOT NULL OR relations.relation_id IS NOT NULL;"""
 
         return concatenated
 
