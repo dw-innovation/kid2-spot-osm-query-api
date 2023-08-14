@@ -9,6 +9,7 @@ from lib.utils import results_to_geojson
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
 from collections import Counter
+from lib.timer import Timer
 
 environment = os.getenv("ENVIRONMENT") or "production"
 
@@ -62,6 +63,7 @@ def get_osm_query():
 
 @app.route("/run-osm-query", methods=["POST"])
 def run_osm_query():
+    timer = Timer()
     data = request.json
     db = get_db()
 
@@ -70,17 +72,26 @@ def run_osm_query():
     except exceptions.ValidationError as e:
         return jsonify({"error": str(e)}), 400
 
+    timer.add_checkpoint("imr_validated")
+
     try:
         set_area(data)
+        timer.add_checkpoint("area_set")
+
         query = constructor.construct_query_from_graph(data)
+        timer.add_checkpoint("query_constructed")
+
         query = query.replace("\n", " ")
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute(query)
+        timer.add_checkpoint("query_executed")
 
         # Fetch all results as a list of dictionaries
         results = [dict(record) for record in cursor]
 
         geojson = results_to_geojson(results)
+        timer.add_checkpoint("results_transformed_to_geojson")
+
         distinct_set_names = list({result["setname"] for result in results})
         set_name_counts = dict(Counter(result["setname"] for result in results))
         area_value = getattr(g, "area", None)
@@ -90,6 +101,7 @@ def run_osm_query():
             **({"query": query} if environment == "development" else {}),
             **({"area": area_value} if area_value is not None else {}),
             "sets": {"distinct_sets": distinct_set_names, "stats": set_name_counts},
+            "timing": timer.get_all_checkpoints(),
         }
 
         return jsonify(response), 200
