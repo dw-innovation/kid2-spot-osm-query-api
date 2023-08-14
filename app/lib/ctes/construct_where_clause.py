@@ -11,7 +11,7 @@ def construct_CTE_where_clause(filters, area=None):
         return ""
 
     # If area is not None, construct area filter
-    area_filter = construct_area_filter(area)
+    area_filter = construct_area_filter()
 
     # Construct filters for each item in the 'filters' list
     where_filters = [construct_filter(filter) for filter in filters]

@@ -4,6 +4,7 @@ from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from jsonschema import validate, exceptions
 import psycopg2
+from lib.utils import set_area
 from lib.utils import results_to_geojson
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
@@ -47,6 +48,7 @@ def get_osm_query():
         return jsonify({"error": str(e)}), 400
 
     try:
+        set_area(data)
         query = constructor.construct_query_from_graph(data)
         query = query.replace("\n", " ")
 
@@ -69,6 +71,7 @@ def run_osm_query():
         return jsonify({"error": str(e)}), 400
 
     try:
+        set_area(data)
         query = constructor.construct_query_from_graph(data)
         query = query.replace("\n", " ")
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)

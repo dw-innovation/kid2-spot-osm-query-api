@@ -1,3 +1,4 @@
+from flask import g
 from ..utils import distance_to_meters
 
 
@@ -49,7 +50,7 @@ def construct_relation(edge, nodes):
                             WHERE EXISTS (
                                 SELECT 1 
                                 FROM {relation_CTE_name} AS c2
-                                WHERE ST_DWithin(ST_Transform(c1.geom,3857), ST_Transform(c2.geom,3857), {dist_in_meters})
+                                WHERE ST_DWithin(ST_Transform(c1.geom, {g.utm}), ST_Transform(c2.geom, {g.utm}), {dist_in_meters})
                                 AND c1.setid <> c2.setid
                             )"""
 

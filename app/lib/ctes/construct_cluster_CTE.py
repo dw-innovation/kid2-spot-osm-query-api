@@ -1,3 +1,4 @@
+from flask import g
 from ..utils import construct_primitives_CTEs, distance_to_meters
 from .construct_where_clause import construct_CTE_where_clause
 
@@ -31,9 +32,10 @@ def construct_cluster_CTE(node, area):
         # Create WHERE clause
         filters = construct_CTE_where_clause(node.get("flts", []), area)
 
+        ## Query to be used to construct primitives CTE, [primitive] will be replaced with the primitive type
         query = f"""WITH clusters AS (
                         SELECT
-                            ST_ClusterDBSCAN(ST_Transform(geom, 3857), eps := {eps_in_meters}, minpoints := {min_points}) OVER () AS cluster_id,
+                            ST_ClusterDBSCAN(ST_Transform(geom, {g.utm}), eps := {eps_in_meters}, minpoints := {min_points}) OVER () AS cluster_id,
                             [primitive]_id,
                             geom
                         FROM [primitive]s

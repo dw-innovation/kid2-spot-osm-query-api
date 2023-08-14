@@ -1,4 +1,7 @@
+import json
 import re
+from flask import g
+import requests
 from shapely import wkb
 from shapely.geometry import mapping
 
@@ -65,6 +68,7 @@ def distance_to_meters(distance_str):
         "cm": 0.01,
         "mm": 0.001,
     }
+
     # Use regex to extract value and unit
     match = re.match(r"(?P<value>[\d.]+)\s?(?P<unit>[a-zA-Z]*)", distance_str)
     if not match:
@@ -84,7 +88,6 @@ def distance_to_meters(distance_str):
     value = float(value_str)
 
     ## Converting to meters
-
     distance_meters = str(value * conversion_rates[unit])
 
     return distance_meters
@@ -130,3 +133,43 @@ def construct_primitives_CTEs(query):
     cte = f"""{concatenated_ctes}{union_clauses}"""
 
     return cte
+
+
+def set_area(data):
+    type = data["a"]["t"]
+
+    if not hasattr(g, "area"):
+        g.area = {}
+
+    if type == "bbox":
+        g.area["type"] = "bbox"
+        g.area["value"] = data["a"]["bbox"]
+        minx, miny, maxx, maxy = data["a"]["bbox"]
+        center_x = (minx + maxx) / 2
+        center_y = (miny + maxy) / 2
+        g.area.center = [center_x, center_y]
+        g.utm = determine_utm_epsg(center_y, center_x)
+
+    elif type == "polygon":
+        g.area["type"] = "polygon"
+        g.area["value"] = data["a"]["plygn"]
+
+    elif type == "area":
+        g.area["type"] = "area"
+        area_name = data["a"]["n"]
+
+        # Get area name from OSM Nominatim
+        url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
+        response = requests.get(url)
+
+        if response.status_code == 200:
+            nominatim_data = json.loads(response.text)
+
+            if len(nominatim_data) > 0 and "geojson" in nominatim_data[0]:
+                geojson = json.dumps(nominatim_data[0]["geojson"])
+                g.area["value"] = geojson
+                g.area["center"] = [
+                    float(nominatim_data[0]["lat"]),
+                    float(nominatim_data[0]["lon"]),
+                ]
+                g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
