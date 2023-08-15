@@ -50,3 +50,11 @@ def construct_filter(filter):
             # Error handling when the value cannot be cast to an integer
             print(f"Error converting value '{value}' to integer for key '{key}'.")
             return ""
+
+    if operator == "<":
+        try:
+            return f"CAST(tags->>'{key}' AS INTEGER) < {int(value)}"
+        except ValueError:
+            # Error handling when the value cannot be cast to an integer
+            print(f"Error converting value '{value}' to integer for key '{key}'.")
+            return ""
