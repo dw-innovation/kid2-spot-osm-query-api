@@ -72,8 +72,6 @@ def run_osm_query():
     except exceptions.ValidationError as e:
         return jsonify({"error": str(e)}), 400
 
-    timer.add_checkpoint("imr_validated")
-
     try:
         set_area(data)
         timer.add_checkpoint("area_set")
