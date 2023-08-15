@@ -40,9 +40,6 @@ def construct_filter(filter):
     if operator == "=":
         return f"tags->>'{key}' = '{value}'"
 
-    if operator == "!=":
-        return f"tags->>'{key}' != '{value}'"
-
     if operator == "~":
         return f"tags->>'{key}' ~ '{value}'"
 

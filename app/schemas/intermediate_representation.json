@@ -8,7 +8,7 @@
         "v": { "type": "string" },
         "op": {
           "type": "string",
-          "enum": ["=", "not", ">", "~"]
+          "enum": ["=", ">", "~"]
         },
         "n": { "type": "string" }
       },
