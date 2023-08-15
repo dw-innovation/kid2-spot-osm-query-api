@@ -67,25 +67,33 @@
       "type": "object",
       "properties": {
         "t": { "type": "string", "enum": ["bbox", "polygon", "area"] },
-        "bbox": {
-          "type": "array",
-          "items": {
-            "type": "number"
-          }
-        },
-        "plyg": {
-          "type": "array",
-          "items": {
-            "type": "array",
-            "items": {
+        "v": {
+          "oneOf": [
+            {
               "type": "array",
-              "items": { "type": "number" }
+              "items": {
+                "type": "number"
+              }
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "array",
+                "items": {
+                  "type": "array",
+                  "items": {
+                    "type": "number"
+                  }
+                }
+              }
+            },
+            {
+              "type": "string"
             }
-          }
-        },
-        "n": { "type": "string" }
+          ]
+        }
       },
-      "required": ["t"]
+      "required": ["t", "v"]
     },
     "ns": {
       "type": "array",
