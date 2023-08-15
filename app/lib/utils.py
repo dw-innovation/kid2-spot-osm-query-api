@@ -143,8 +143,8 @@ def set_area(data):
 
     if type == "bbox":
         g.area["type"] = "bbox"
-        g.area["value"] = data["a"]["bbox"]
-        minx, miny, maxx, maxy = data["a"]["bbox"]
+        g.area["value"] = data["a"]["v"]
+        minx, miny, maxx, maxy = data["a"]["v"]
         center_x = (minx + maxx) / 2
         center_y = (miny + maxy) / 2
         g.area.center = [center_x, center_y]
@@ -152,11 +152,11 @@ def set_area(data):
 
     elif type == "polygon":
         g.area["type"] = "polygon"
-        g.area["value"] = data["a"]["plygn"]
+        g.area["value"] = data["a"]["v"]
 
     elif type == "area":
         g.area["type"] = "area"
-        area_name = data["a"]["n"]
+        area_name = data["a"]["v"]
 
         # Get area name from OSM Nominatim
         url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
