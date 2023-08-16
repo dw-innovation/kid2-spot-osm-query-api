@@ -147,7 +147,7 @@ def set_area(data):
         minx, miny, maxx, maxy = data["a"]["v"]
         center_x = (minx + maxx) / 2
         center_y = (miny + maxy) / 2
-        g.area.center = [center_x, center_y]
+        g.area["center"] = [center_x, center_y]
         g.utm = determine_utm_epsg(center_y, center_x)
 
     elif type == "polygon":
