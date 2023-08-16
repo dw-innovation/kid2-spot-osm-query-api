@@ -124,7 +124,7 @@
             "properties": {
               "src": { "type": "number" },
               "tgt": { "type": "number" },
-              "t": { "type": "string", "const": "in" }
+              "t": { "type": "string", "const": "cnt" }
             },
             "required": ["src", "tgt", "t"]
           }
