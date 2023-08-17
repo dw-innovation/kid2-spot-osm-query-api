@@ -10,8 +10,12 @@ def construct_relational_CTEs(intermediate_representation):
     # Construct relations for each edge
     relations = [construct_relation(edge, nodes) for edge in edges]
 
-    # Return a single string that represents all the relations as a UNION of individual relational CTEs
-    return "RelationalCTE AS (" + " UNION ALL ".join(relations) + ")"
+    relationalCTEs = "WITH " + ", ".join(relation["query"] for relation in relations)
+
+    union_clauses = " UNION ALL ".join(
+        f"SELECT * FROM {relation['ctename']}" for relation in relations
+    )
+    return f"RelationalCTE AS ({relationalCTEs} {union_clauses} )"
 
 
 # Function to construct an individual relation
@@ -42,17 +46,19 @@ def construct_relation(edge, nodes):
         tgt_CTE_name = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}".replace(" ", "_")
 
         # Construct the relation query using the defined CTE names and distance
-        relational_query = f"""WITH {relation_CTE_name} AS (
-                                SELECT * FROM {src_CTE_name}
-                                UNION ALL
-                                SELECT * FROM {tgt_CTE_name})
-                            SELECT * FROM {relation_CTE_name} AS c1
-                            WHERE EXISTS (
-                                SELECT 1 
-                                FROM {relation_CTE_name} AS c2
-                                WHERE ST_DWithin(ST_Transform(c1.geom, {g.utm}), ST_Transform(c2.geom, {g.utm}), {dist_in_meters})
-                                AND c1.setid <> c2.setid
-                            )"""
+        relational_query = f"""{relation_CTE_name} AS (
+                                    WITH UnionCTE AS (
+                                        SELECT * FROM {src_CTE_name}
+                                        UNION ALL
+                                        SELECT * FROM {tgt_CTE_name}
+                                    )
+                                    SELECT * FROM UnionCTE AS c1
+                                    WHERE EXISTS (
+                                        SELECT 1 
+                                        FROM UnionCTE AS c2
+                                        WHERE ST_DWithin(ST_Transform(c1.geom, {g.utm}), ST_Transform(c2.geom, {g.utm}), {dist_in_meters})
+                                        AND c1.setid <> c2.setid)
+                                    )"""
 
     # Check if the edge type is "cnt"
     if type == "cnt":
@@ -71,34 +77,40 @@ def construct_relation(edge, nodes):
 
         # Construct the relation query using the defined CTE names
         relational_query = f"""
-                WITH {relation_CTE_name} AS (
-                    SELECT * FROM {src_CTE_name}
+                {relation_CTE_name} AS (
+                    WITH UnionCTE AS (
+                        SELECT * FROM {src_CTE_name}
+                        UNION ALL
+                        SELECT * FROM {tgt_CTE_name}
+                    ),
+                    Contained AS (
+                        SELECT c1.*
+                        FROM UnionCTE AS c1
+                        WHERE EXISTS (
+                            SELECT 1 
+                            FROM UnionCTE AS c2
+                            WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(c1.geom, {g.utm}))
+                            AND c1.setid <> c2.setid
+                        )
+                    ),
+                    Containers AS (
+                        SELECT c2.*
+                        FROM UnionCTE AS c2
+                        WHERE EXISTS (
+                            SELECT 1 
+                            FROM Contained
+                            WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(Contained.geom, {g.utm}))
+                            AND c2.setid <> Contained.setid
+                        )
+                    )
+                    SELECT * FROM Contained
                     UNION ALL
-                    SELECT * FROM {tgt_CTE_name}
-                ),
-                Contained AS (
-                    SELECT c1.*
-                    FROM {relation_CTE_name} AS c1
-                    WHERE EXISTS (
-                        SELECT 1 
-                        FROM {relation_CTE_name} AS c2
-                        WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(c1.geom, {g.utm}))
-                        AND c1.setid <> c2.setid
-                    )
-                ),
-                Containers AS (
-                    SELECT c2.*
-                    FROM {relation_CTE_name} AS c2
-                    WHERE EXISTS (
-                        SELECT 1 
-                        FROM Contained
-                        WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(Contained.geom, {g.utm}))
-                        AND c2.setid <> Contained.setid
-                    )
+                    SELECT * FROM Containers
                 )
-                SELECT * FROM Contained
-                UNION ALL
-                SELECT * FROM Containers
                 """
+    query = {
+        "query": relational_query,
+        "ctename": relation_CTE_name,
+    }
 
-    return relational_query
+    return query
