@@ -1,10 +1,10 @@
-## Overpass++ OSM Query Service (Dockerized)
+## Spot OSM Query Service (Dockerized)
 
-This service is an integral component of the Overpass++ application. Its primary functionality revolves around interpreting a graph's intermediate representation and, from there, builing a corresponding Postgres query. The subsequent querying is run against the Overpass++ OSM Postgres instance. The results are then returned in GeoJSON format, accompanied by relevant statistics.
+This service is an integral component of the Spot application. Its primary functionality revolves around interpreting a graph's intermediate representation and, from there, builing a corresponding Postgres query. The subsequent querying is run against the Spot OSM Postgres instance. The results are then returned in GeoJSON format, accompanied by relevant statistics.
 
 ## Pre-Requisites
 
-Ensure you've initiated and are running the Overpass++ Postgres instance. This can be on your local machine or a remote setup.
+Ensure you've initiated and are running the Spot Postgres instance. This can be on your local machine or a remote setup.
 
 ## Getting Started
 
