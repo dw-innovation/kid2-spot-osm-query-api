@@ -1,3 +1,4 @@
+from .construct_envelope_CTE import construct_envelope_CTE
 from .construct_group_CTE import construct_group_CTE
 from .construct_NWR_CTE import construct_NWR_CTE
 from .construct_cluster_CTE import construct_cluster_CTE
@@ -21,13 +22,14 @@ def construct_ctes(intermediate_representation):
     nodes = intermediate_representation["ns"]
     area = intermediate_representation["a"]
 
+    # Construct envelope CTE
+    envelope_cte = "WITH " + construct_envelope_CTE()
+
+    ctes.append(envelope_cte)
+
     # Iterate over the nodes to construct each CTE
     for i in range(len(nodes)):
         cte = constructCTE(nodes[i], area)
-
-        # If this is the first CTE, prepend it with "WITH" for proper SQL syntax
-        if i == 0:
-            cte = "WITH " + cte
 
         # Append the CTE to the list
         ctes.append(cte)
