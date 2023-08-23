@@ -1,6 +1,3 @@
-from .construct_area_clause import construct_area_filter
-
-
 def construct_CTE_where_clause(filters, area=None):
     """
     Function to construct the WHERE clause of the SQL query.
@@ -11,7 +8,7 @@ def construct_CTE_where_clause(filters, area=None):
         return ""
 
     # If area is not None, construct area filter
-    area_filter = construct_area_filter()
+    area_filter = "ST_Contains((SELECT geom FROM envelope), geom)"
 
     # Construct filters for each item in the 'filters' list
     where_filters = [construct_filter(filter) for filter in filters]
