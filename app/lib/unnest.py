@@ -32,7 +32,7 @@ def unnest(ctes):
 
         # Limit to distinct rows and join with the nodes table to get the tags and geometry
         concatenated = f"""{ctes_str}
-                        SELECT DISTINCT UnnestedCTE.id, UnnestedCTE.osm_id, UnnestedCTE.setid, UnnestedCTE.setname,
+                        SELECT DISTINCT UnnestedCTE.id, UnnestedCTE.osm_id, UnnestedCTE.set_id, UnnestedCTE.setname,
                             COALESCE(nodes.tags, ways.tags, relations.tags) AS tags,
                             COALESCE(nodes.geom, ways.geom, relations.geom) AS geom
                         FROM 
@@ -48,5 +48,5 @@ def unnest(ctes):
         return concatenated
 
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in unnest.py: {e}")
         return None

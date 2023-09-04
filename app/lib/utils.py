@@ -34,7 +34,6 @@ def results_to_geojson(results):
 
         # Remove 'geom' key from the result before assigning to properties since it's not needed in the properties
         del result["geom"]
-        del result["id"]
 
         feature = {
             "type": "Feature",

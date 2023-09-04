@@ -2,6 +2,8 @@ from .ctes.construct import construct_ctes
 from .unnest import unnest
 from .utils import clean_query
 from .ctes.construct_relational_CTE import construct_relational_CTEs
+from psycopg2 import sql
+from flask import g
 
 
 def construct_query_from_graph(intermediate_representation):
@@ -23,16 +25,15 @@ def construct_query_from_graph(intermediate_representation):
         # Build the relational CTEs
         relationalctes = construct_relational_CTEs(intermediate_representation)
 
-        # Add the relational CTEs to the list of CTEs
-        ctes.append(relationalctes)
+        # join the relational CTEs to the list of CTEs (both are SQL composables)
+        all_ctes = ctes + [relationalctes]
 
-        # Unnest the CTEs to unfold the array of nodes stored in the nodes column into individual rows
-        unnestedQuery = unnest(ctes)
+        final_query = sql.SQL("WITH ") + sql.SQL(", ").join(all_ctes)
 
-        # Clean the query to remove unnecessary whitespace
-        cleanedQuery = clean_query(unnestedQuery)
+        final_query += sql.SQL("SELECT osm_ids, set_name, tags, geom FROM Relations;")
 
-        return cleanedQuery
+        return final_query
+
     except Exception as e:
-        print(f"An error occurred: {e}")
+        print(f"An error occurred in constructor.py: {e}")
         return None

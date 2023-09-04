@@ -10,6 +10,7 @@ from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
 from collections import Counter
 from lib.timer import Timer
+from psycopg2 import sql
 
 environment = os.getenv("ENVIRONMENT") or "production"
 
@@ -41,6 +42,8 @@ def teardown(e=None):
 @app.route("/get-osm-query", methods=["POST"])
 def get_osm_query():
     data = request.json
+    db = get_db()
+    cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
         validate(data, schema)
@@ -51,11 +54,7 @@ def get_osm_query():
     try:
         set_area(data)
         query = constructor.construct_query_from_graph(data)
-        query = query.replace("\n", " ")
-
-        response = {"query": query}
-
-        return jsonify(response), 200
+        return query.as_string(cursor)
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
@@ -77,9 +76,9 @@ def run_osm_query():
         timer.add_checkpoint("area_set")
 
         query = constructor.construct_query_from_graph(data)
+
         timer.add_checkpoint("query_constructed")
 
-        query = query.replace("\n", " ")
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute(query)
         timer.add_checkpoint("query_executed")
@@ -90,13 +89,17 @@ def run_osm_query():
         geojson = results_to_geojson(results)
         timer.add_checkpoint("results_transformed_to_geojson")
 
-        distinct_set_names = list({result["setname"] for result in results})
-        set_name_counts = dict(Counter(result["setname"] for result in results))
+        distinct_set_names = list({result["set_name"] for result in results})
+        set_name_counts = dict(Counter(result["set_name"] for result in results))
         area_value = getattr(g, "area", None)
 
         response = {
             "results": geojson,
-            **({"query": query} if environment == "development" else {}),
+            **(
+                {"query": query.as_string(cursor)}
+                if environment == "development"
+                else {}
+            ),
             **({"area": area_value} if area_value is not None else {}),
             "sets": {"distinct_sets": distinct_set_names, "stats": set_name_counts},
             "timing": timer.get_all_checkpoints(),

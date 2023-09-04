@@ -1,21 +1,36 @@
 from flask import g
 from ..utils import distance_to_meters
+from psycopg2 import sql
 
 
-def construct_relational_CTEs(intermediate_representation):
+def construct_relational_CTEs(imr):
     # Extract nodes and edges from the input intermediate representation
-    nodes = intermediate_representation["ns"]
-    edges = intermediate_representation["es"]
+    nodes = imr["ns"]
+    edges = imr["es"]
 
     # Construct relations for each edge
     relations = [construct_relation(edge, nodes) for edge in edges]
 
-    relationalCTEs = "WITH " + ", ".join(relation["query"] for relation in relations)
+    # Compose the queries for each relation
+    composed_queries = [relation["query"] for relation in relations]
 
-    union_clauses = " UNION ALL ".join(
-        f"SELECT * FROM {relation['ctename']}" for relation in relations
+    # Join the composed queries with commas
+    composed_relations = sql.SQL(", ").join(composed_queries)
+
+    # Create the UNION ALL clauses for the relations
+    union_clauses = sql.SQL(" UNION ALL ").join(
+        sql.SQL("SELECT * FROM {}").format(sql.Identifier(relation["ctename"]))
+        for relation in relations
     )
-    return f"RelationalCTE AS ({relationalCTEs} {union_clauses} )"
+
+    # Assemble the final CTE
+    relationalCTEs = sql.SQL(
+        "WITH {composed_relations} SELECT * FROM ({union_clauses}) AS Combined"
+    ).format(composed_relations=composed_relations, union_clauses=union_clauses)
+
+    final_CTE = sql.SQL("Relations AS ({})").format(relationalCTEs)
+
+    return final_CTE
 
 
 # Function to construct an individual relation
@@ -46,19 +61,25 @@ def construct_relation(edge, nodes):
         tgt_CTE_name = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}".replace(" ", "_")
 
         # Construct the relation query using the defined CTE names and distance
-        relational_query = f"""{relation_CTE_name} AS (
-                                    WITH UnionCTE AS (
-                                        SELECT * FROM {src_CTE_name}
-                                        UNION ALL
-                                        SELECT * FROM {tgt_CTE_name}
-                                    )
-                                    SELECT * FROM UnionCTE AS c1
-                                    WHERE EXISTS (
-                                        SELECT 1 
-                                        FROM UnionCTE AS c2
-                                        WHERE ST_DWithin(ST_Transform(c1.geom, {g.utm}), ST_Transform(c2.geom, {g.utm}), {dist_in_meters})
-                                        AND c1.setid <> c2.setid)
-                                    )"""
+        relational_query = sql.SQL(
+            """{relation_CTE_name} AS (
+                    WITH setNodes AS (
+                        SELECT *, 'src' AS origin FROM {src_CTE_name}
+                        UNION ALL
+                        SELECT *, 'tgt' AS origin FROM {tgt_CTE_name}
+                    )
+                    SELECT c1.*
+                    FROM setNodes AS c1
+                    JOIN setNodes AS c2 ON ST_DWithin(c1.transformed_geom, c2.transformed_geom, {dist_in_meters})
+                                        AND c1.set_id <> c2.set_id
+                )"""
+        ).format(
+            relation_CTE_name=sql.Identifier(relation_CTE_name),
+            src_CTE_name=sql.Identifier(src_CTE_name),
+            tgt_CTE_name=sql.Identifier(tgt_CTE_name),
+            utm=sql.Literal(g.utm),
+            dist_in_meters=sql.Literal(dist_in_meters),
+        )
 
     # Check if the edge type is "cnt"
     if type == "cnt":
@@ -75,42 +96,36 @@ def construct_relation(edge, nodes):
         tgt_set = next((item for item in nodes if item["id"] == target_id), None)
         tgt_CTE_name = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}".replace(" ", "_")
 
-        # Construct the relation query using the defined CTE names
-        relational_query = f"""
+        relational_query = sql.SQL(
+            """
                 {relation_CTE_name} AS (
-                    WITH UnionCTE AS (
-                        SELECT * FROM {src_CTE_name}
+                    WITH setNodes AS (
+                        SELECT *, 'src' AS origin FROM {src_CTE_name}
                         UNION ALL
-                        SELECT * FROM {tgt_CTE_name}
+                        SELECT *, 'tgt' AS origin FROM {tgt_CTE_name}
                     ),
                     Contained AS (
                         SELECT c1.*
-                        FROM UnionCTE AS c1
-                        WHERE EXISTS (
-                            SELECT 1 
-                            FROM UnionCTE AS c2
-                            WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(c1.geom, {g.utm}))
-                            AND c1.setid <> c2.setid
-                        )
+                        FROM setNodes AS c1
+                        JOIN setNodes AS c2 ON ST_Contains(c2.transformed_geom, c1.transformed_geom) 
+                                            AND c1.set_id <> c2.set_id
                     ),
                     Containers AS (
                         SELECT c2.*
-                        FROM UnionCTE AS c2
-                        WHERE EXISTS (
-                            SELECT 1 
-                            FROM Contained
-                            WHERE ST_Contains(ST_Transform(c2.geom, {g.utm}), ST_Transform(Contained.geom, {g.utm}))
-                            AND c2.setid <> Contained.setid
-                        )
+                        FROM Contained AS c1
+                        JOIN setNodes AS c2 ON ST_Contains(c2.transformed_geom, c1.transformed_geom) 
+                                            AND c1.set_id <> c2.set_id
                     )
                     SELECT * FROM Contained
                     UNION ALL
                     SELECT * FROM Containers
                 )
                 """
-    query = {
-        "query": relational_query,
-        "ctename": relation_CTE_name,
-    }
+        ).format(
+            relation_CTE_name=sql.Identifier(relation_CTE_name),
+            src_CTE_name=sql.Identifier(src_CTE_name),
+            tgt_CTE_name=sql.Identifier(tgt_CTE_name),
+            utm=sql.Literal(g.utm),
+        )
 
-    return query
+    return {"query": relational_query, "ctename": relation_CTE_name}
