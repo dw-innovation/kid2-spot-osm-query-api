@@ -29,8 +29,8 @@ def construct_search_area_CTE():
         polygon_coordinates = ", ".join([f"{coord[0]} {coord[1]}" for coord in geom])
 
         # Use ST_GeomFromText to create the geometry
-        geometry = sql.SQL("ST_GeomFromText('POLYGON(({}))', 4326)").format(
-            sql.Literal(polygon_coordinates)
+        geometry = sql.SQL("ST_GeomFromText('POLYGON(({polygon}))', {utm})").format(
+            utm=sql.Literal(g.utm), polygon=sql.Literal(polygon_coordinates)
         )
 
     # Handle geojson area type
