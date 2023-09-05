@@ -1,5 +1,4 @@
 from .construct_search_area_CTE import construct_search_area_CTE
-from .construct_group_CTE import construct_group_CTE
 from .construct_NWR_CTE import construct_NWR_CTE
 from .construct_cluster_CTE import construct_cluster_CTE
 from psycopg2 import sql
@@ -58,5 +57,3 @@ def constructCTE(node, area):
         return construct_cluster_CTE(node, area)
     elif type == "nwr":
         return construct_NWR_CTE(node, area)
-    elif type == "group":
-        return construct_group_CTE(node, area)
