@@ -42,23 +42,6 @@
         "t": { "type": "string", "const": "nwr" }
       },
       "required": ["id", "n", "flts", "t"]
-    },
-    "Group": {
-      "type": "object",
-      "properties": {
-        "id": { "type": "number" },
-        "t": { "type": "string" },
-        "els": {
-          "type": "array",
-          "items": {
-            "oneOf": [
-              { "$ref": "#/definitions/Cluster" },
-              { "$ref": "#/definitions/NWR" }
-            ]
-          }
-        }
-      },
-      "required": ["id", "t", "els"]
     }
   },
   "type": "object",
@@ -100,8 +83,7 @@
       "items": {
         "oneOf": [
           { "$ref": "#/definitions/Cluster" },
-          { "$ref": "#/definitions/NWR" },
-          { "$ref": "#/definitions/Group" }
+          { "$ref": "#/definitions/NWR" }
         ]
       }
     },
