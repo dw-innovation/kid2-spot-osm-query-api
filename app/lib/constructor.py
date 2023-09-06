@@ -30,7 +30,7 @@ def construct_query_from_graph(intermediate_representation):
 
         final_query = sql.SQL("WITH ") + sql.SQL(", ").join(all_ctes)
 
-        final_query += sql.SQL("SELECT osm_ids, set_name, tags, geom FROM Relations;")
+        final_query += sql.SQL("SELECT * FROM Relations;")
 
         return final_query
 
