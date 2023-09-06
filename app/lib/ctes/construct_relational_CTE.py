@@ -62,7 +62,8 @@ def construct_relation(edge, nodes):
 
         # Construct the relation query using the defined CTE names and distance
         relational_query = sql.SQL(
-            """{relation_CTE_name} AS (
+            """
+                {relation_CTE_name} AS (
                     WITH setNodes AS (
                         SELECT *, 'src' AS origin FROM {src_CTE_name}
                         UNION ALL
@@ -100,7 +101,8 @@ def construct_relation(edge, nodes):
                             SELECT DISTINCT unnest(ARRAY_CAT(COALESCE(src_nearby, ARRAY[]::bigint[]), COALESCE(tgt_nearby, ARRAY[]::bigint[])))
                         ) AS nearby_node_ids
                     FROM Combined
-            )"""
+                )
+            """
         ).format(
             relation_CTE_name=sql.Identifier(relation_CTE_name),
             src_CTE_name=sql.Identifier(src_CTE_name),
@@ -127,7 +129,8 @@ def construct_relation(edge, nodes):
         tgt_CTE_name = f"{tgt_type}_{tgt_set['id']}_{tgt_set['n']}".replace(" ", "_")
 
         relational_query = sql.SQL(
-            """{relation_CTE_name} AS (
+            """
+                {relation_CTE_name} AS (
                     WITH setNodes AS (
                         SELECT *, 'src' AS origin FROM {src_CTE_name}
                         UNION ALL
@@ -172,4 +175,9 @@ def construct_relation(edge, nodes):
             utm=sql.Literal(g.utm),
         )
 
-    return {"query": relational_query, "ctename": relation_CTE_name}
+    return {
+        "query": relational_query,
+        "ctename": relation_CTE_name,
+        "src_id": source_id,
+        "tgt_id": target_id,
+    }
