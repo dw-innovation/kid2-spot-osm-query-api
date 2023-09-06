@@ -13,7 +13,7 @@ def construct_NWR_CTE(node, area):
     query = sql.SQL(
         """
         SELECT 
-            'nwr_' || {set_id} || '_id' AS id,
+            {set_id} AS set_id,
             ST_Transform(geom, {utm}) AS transformed_geom,
             geom,
             node_id AS osm_ids,
@@ -26,15 +26,15 @@ def construct_NWR_CTE(node, area):
             {filters}
         """
     ).format(
-        set_id=sql.Literal(set_id),
+        set_id=sql.Literal(str(set_id)),
         utm=sql.Literal(g.utm),
         set_name=sql.Literal(set_name),
         table_view=sql.Identifier(os.getenv("TABLE_VIEW")),
         filters=filters,
     )
 
-    cte = sql.SQL("{CTE_name} AS ({query})").format(
-        CTE_name=sql.Identifier(CTE_name),
+    cte = sql.SQL("{set_id} AS ({query})").format(
+        set_id=sql.Identifier(str(set_id)),
         query=query,
     )
 
