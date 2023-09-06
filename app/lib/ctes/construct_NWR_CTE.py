@@ -11,18 +11,20 @@ def construct_NWR_CTE(node, area):
     filters = construct_CTE_where_clause(node.get("flts", []), area)
 
     query = sql.SQL(
-        """SELECT 
-        'nwr_' || {set_id} || '_id' AS id,
-        ST_Transform(geom, {utm}) AS transformed_geom,
-        geom,
-        node_id AS osm_ids,
-        {set_id} AS set_id,
-        {set_name} AS set_name,
-        tags
-    FROM
-        {table_view}
-    WHERE
-        {filters}"""
+        """
+        SELECT 
+            'nwr_' || {set_id} || '_id' AS id,
+            ST_Transform(geom, {utm}) AS transformed_geom,
+            geom,
+            node_id AS osm_ids,
+            {set_id} AS set_id,
+            {set_name} AS set_name,
+            tags
+        FROM
+            {table_view}
+        WHERE
+            {filters}
+        """
     ).format(
         set_id=sql.Literal(set_id),
         utm=sql.Literal(g.utm),
