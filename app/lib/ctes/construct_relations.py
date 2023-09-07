@@ -80,7 +80,7 @@ def construct_relations(imr):
         # Formulate SQL SELECT statement
         query_part = sql.SQL(
             """SELECT 
-                {type} as type, {name_alias}.osm_ids, {name_alias}.geom, {name_alias}.tags
+                {type} AS set_name, {name_alias}.osm_ids, {name_alias}.geom, {name_alias}.tags
                 FROM {first_id} {first_name_alias}
                 {joins}"""
         ).format(
