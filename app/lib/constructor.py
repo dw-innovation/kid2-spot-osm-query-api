@@ -1,7 +1,7 @@
 from .ctes.construct import construct_ctes
 from .unnest import unnest
 from .utils import clean_query
-from .ctes.construct_relational_CTE import construct_relational_CTEs
+from .ctes.construct_relations import construct_relations
 from psycopg2 import sql
 from flask import g
 
@@ -23,14 +23,14 @@ def construct_query_from_graph(intermediate_representation):
         ctes = construct_ctes(intermediate_representation)
 
         # Build the relational CTEs
-        relationalctes = construct_relational_CTEs(intermediate_representation)
+        relations = construct_relations(intermediate_representation)
 
         # join the relational CTEs to the list of CTEs (both are SQL composables)
-        all_ctes = ctes + [relationalctes]
+        combined_ctes = sql.SQL("WITH ") + sql.SQL(", ").join(ctes)
 
-        final_query = sql.SQL("WITH ") + sql.SQL(", ").join(all_ctes)
+        final_query = sql.SQL(" ").join([combined_ctes, relations])
 
-        final_query += sql.SQL("SELECT * FROM Relations;")
+        ##final_query += sql.SQL("SELECT * FROM Relations;")
 
         return final_query
 
