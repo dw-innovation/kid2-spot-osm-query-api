@@ -4,14 +4,16 @@ from psycopg2 import sql
 
 
 def construct_relations(imr):
+    edges = imr["es"]
+    nodes = imr["ns"]
     # Creating a mapping from node IDs to node names
-    id_to_name = {node["id"]: node["n"] for node in imr["ns"]}
+    id_to_name = {node["id"]: node["n"] for node in nodes}
 
     # Using defaultdict to manage the join conditions for each target node
     join_conditions = defaultdict(list)
 
     # Loop through each edge in the input graph
-    for edge in imr["es"]:
+    for edge in edges:
         # Get source and target node names
         src_name = id_to_name[edge["src"]]
         tgt_name = id_to_name[edge["tgt"]]
@@ -57,7 +59,7 @@ def construct_relations(imr):
                 str(
                     next(
                         edge["tgt"]
-                        for edge in imr["es"]
+                        for edge in edges
                         if id_to_name[edge["tgt"]] == tgt_name
                     )
                 )
@@ -72,10 +74,10 @@ def construct_relations(imr):
 
     # Generate final SQL queries
     final_queries = []
-    for node in imr["ns"]:
+    for node in nodes:
         node_name = node["n"]
-        first_id = sql.Identifier(str(imr["ns"][0]["id"]))
-        first_name = sql.Identifier(str(imr["ns"][0]["n"]))
+        first_id = sql.Identifier(str(nodes[0]["id"]))
+        first_name = sql.Identifier(str(nodes[0]["n"]))
 
         # Formulate SQL SELECT statement
         query_part = sql.SQL(
