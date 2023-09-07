@@ -96,6 +96,15 @@ def construct_relations(imr):
         final_queries.append(query_part)
 
     # Combine all SQL queries using UNION ALL
-    final_query = sql.SQL(" UNION ALL ").join(final_queries)
+    union = sql.SQL(" UNION ALL ").join(final_queries)
+
+    final_query = sql.SQL(
+        """
+                        SELECT DISTINCT ON (osm_ids) *
+                        FROM (
+                            {query}
+                        ) AS subquery
+                        ORDER BY osm_ids;"""
+    ).format(query=union)
 
     return final_query
