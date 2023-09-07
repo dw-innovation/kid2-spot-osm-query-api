@@ -38,6 +38,8 @@ def construct_search_area_CTE():
         geometry = sql.SQL("ST_GeomFromGeoJSON({})").format(sql.Literal(geom))
 
     # Construct the CTE (Common Table Expression) using the generated geometry
-    cte = sql.SQL('"envelope" AS (SELECT {geometry} AS geom)').format(geometry=geometry)
+    cte = sql.SQL("{envelope} AS (SELECT {geometry} AS geom)").format(
+        envelope=sql.Identifier("envelope"), geometry=geometry
+    )
 
     return cte

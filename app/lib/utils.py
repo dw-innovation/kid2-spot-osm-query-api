@@ -6,11 +6,6 @@ from shapely import wkb
 from shapely.geometry import mapping
 
 
-def clean_query(query):
-    cleaned_query = "\n".join(line.strip() for line in query.split("\n"))
-    return cleaned_query
-
-
 def geom_bin_to_geojson(geom_bin):
     """
     Convert PostGIS binary geometries into GeoJSON format.

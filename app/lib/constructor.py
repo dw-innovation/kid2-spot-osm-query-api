@@ -1,5 +1,5 @@
 from .ctes.construct import construct_ctes
-from .ctes.construct_relations import construct_relations
+from .construct_relations import construct_relations
 from psycopg2 import sql
 
 

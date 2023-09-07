@@ -1,20 +1,9 @@
 from .construct_search_area_CTE import construct_search_area_CTE
 from .construct_NWR_CTE import construct_NWR_CTE
 from .construct_cluster_CTE import construct_cluster_CTE
-from psycopg2 import sql
 
 
 def construct_ctes(intermediate_representation):
-    """
-    Constructs a list of Common Table Expressions (CTEs) using the nodes and
-    area data from the intermediate representation of a SQL query.
-
-    :param intermediate_representation: A dict containing "ns" (nodes) and "a" (area).
-    :type intermediate_representation: dict
-    :return: A list of CTEs represented as strings.
-    :rtype: list
-    """
-
     # Initialize an empty list to hold the CTEs
     ctes = []
 
@@ -38,17 +27,6 @@ def construct_ctes(intermediate_representation):
 
 
 def constructCTE(node, area):
-    """
-    Constructs a Common Table Expression (CTE) based on the provided node and area.
-
-    :param node: A dict containing information for CTE construction.
-    :type node: dict
-    :param area: A parameter used in the WHERE clause for area filtering.
-    :type area: str, int or float
-    :return: A CTE represented as a string.
-    :rtype: str
-    """
-
     # Get the type of the node
     type = node["t"]
 

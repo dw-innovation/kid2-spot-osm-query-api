@@ -1,5 +1,5 @@
 from collections import defaultdict
-from ..utils import distance_to_meters
+from .utils import distance_to_meters
 from psycopg2 import sql
 
 
