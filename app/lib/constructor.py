@@ -1,37 +1,23 @@
 from .ctes.construct import construct_ctes
-from .unnest import unnest
-from .utils import clean_query
 from .ctes.construct_relations import construct_relations
 from psycopg2 import sql
-from flask import g
 
 
 def construct_query_from_graph(intermediate_representation):
-    """
-    This function takes a JSON representation of the intermediate query,
-    constructs common table expressions (CTEs), unnests the CTEs to create individual rows,
-    and cleans the resulting query.
-
-    :param intermediate_representation: JSON representation of the intermediate query
-    :type intermediate_representation: JSON object
-    :return: SQL query string
-    :rtype: str
-    """
-
     try:
-        # Build all CTEs, so subqueries that we can then reference in the relational CTE
+        # Construct the node CTEs based on the intermediate representation
         ctes = construct_ctes(intermediate_representation)
 
-        # Build the relational CTEs
-        relations = construct_relations(intermediate_representation)
-
-        # join the relational CTEs to the list of CTEs (both are SQL composables)
+        # Combine the node constructed CTEs with the SQL WITH clause
         combined_ctes = sql.SQL("WITH ") + sql.SQL(", ").join(ctes)
 
+        # Construct the relations (JOINs) based on the intermediate representation
+        relations = construct_relations(intermediate_representation)
+
+        # Combine CTEs and relations to form the final query
         final_query = sql.SQL(" ").join([combined_ctes, relations])
 
-        ##final_query += sql.SQL("SELECT * FROM Relations;")
-
+        # Return the final SQL query
         return final_query
 
     except Exception as e:
