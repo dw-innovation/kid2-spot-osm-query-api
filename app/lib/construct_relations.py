@@ -81,8 +81,13 @@ def construct_relations(imr):
 
         # Formulate SQL SELECT statement
         query_part = sql.SQL(
-            """SELECT 
-                {type} AS set_name, {name_alias}.osm_ids, {name_alias}.geom, {name_alias}.tags
+            """
+                SELECT 
+                    {type} AS set_name, 
+                    {name_alias}.osm_ids, 
+                    {name_alias}.geom, 
+                    {name_alias}.tags, 
+                    {first_name_alias}.osm_ids AS primary_osm_id
                 FROM {first_id} {first_name_alias}
                 {joins}"""
         ).format(
@@ -99,12 +104,15 @@ def construct_relations(imr):
     union = sql.SQL(" UNION ALL ").join(final_queries)
 
     final_query = sql.SQL(
-        """
-                        SELECT DISTINCT ON (osm_ids) *
-                        FROM (
-                            {query}
-                        ) AS subquery
-                        ORDER BY osm_ids;"""
+        """ 
+            SELECT DISTINCT ON (osm_ids)
+                subquery.set_name, 
+                subquery.osm_ids, 
+                subquery.geom, 
+                subquery.tags, 
+                subquery.primary_osm_id
+            FROM ({query}) AS subquery
+            ORDER BY osm_ids;"""
     ).format(query=union)
 
     return final_query
