@@ -3,7 +3,9 @@ import re
 from flask import g
 import requests
 from shapely import wkb
-from shapely.geometry import mapping
+from shapely.wkb import loads as wkb_loads
+from shapely.geometry import MultiPoint, LineString, Point, mapping
+from math import cos, radians
 
 
 def geom_bin_to_geojson(geom_bin):
@@ -167,3 +169,49 @@ def set_area(data):
                     float(nominatim_data[0]["lon"]),
                 ]
                 g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
+
+
+def get_spots(results):
+    grouped = {}
+    spots = []
+
+    for record in results:
+        primary_osm_id = record["primary_osm_id"]
+
+        if primary_osm_id not in grouped:
+            grouped[primary_osm_id] = {"coords": [], "tags": None}
+
+        if record["osm_ids"] == primary_osm_id:
+            grouped[primary_osm_id]["tags"] = record["tags"]
+
+        geom = wkb_loads(record["geom"], hex=False)
+        coords = []
+
+        if isinstance(geom, Point):
+            coords = [geom.coords[0]]
+        elif isinstance(geom, LineString):
+            coords = list(geom.coords)
+        else:
+            coords = list(geom.exterior.coords)
+
+        grouped[primary_osm_id]["coords"].extend(coords)
+
+    buffer_meters = 100
+    buffer_lat = buffer_meters / 111000.0
+
+    for primary_osm_id, data in grouped.items():
+        multi_point = MultiPoint(data["coords"])
+        minx, miny, maxx, maxy = multi_point.bounds
+        buffer_lon = buffer_meters / (111000.0 * cos(radians(miny)))
+
+        minx -= buffer_lon
+        miny -= buffer_lat
+        maxx += buffer_lon
+        maxy += buffer_lat
+
+        bbox = [minx, miny, maxx, maxy]
+        tags = data["tags"]
+
+        spots.append({"bbox": bbox, "id": primary_osm_id, "tags": tags})
+
+    return spots
