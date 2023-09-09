@@ -6,6 +6,10 @@ from psycopg2 import sql
 def construct_relations(imr):
     edges = imr["es"]
     nodes = imr["ns"]
+
+    # Create a set to keep track of all nodes that are either source or target
+    referenced_nodes = set()
+
     # Creating a mapping from node IDs to node names
     id_to_name = {node["id"]: node["n"] for node in nodes}
 
@@ -17,6 +21,9 @@ def construct_relations(imr):
         # Get source and target node names
         src_name = id_to_name[edge["src"]]
         tgt_name = id_to_name[edge["tgt"]]
+
+        referenced_nodes.add(id_to_name[edge["src"]])
+        referenced_nodes.add(id_to_name[edge["tgt"]])
 
         # Get the type of relation between nodes
         type = edge["t"]
@@ -74,31 +81,51 @@ def construct_relations(imr):
 
     # Generate final SQL queries
     final_queries = []
+
     for node in nodes:
         node_name = node["n"]
         first_id = sql.Identifier(str(nodes[0]["id"]))
         first_name = sql.Identifier(str(nodes[0]["n"]))
 
-        # Formulate SQL SELECT statement
-        query_part = sql.SQL(
-            """
+        if node_name in referenced_nodes:
+            # Handle nodes that are referenced by at least one edge and construct SQL query with JOINs
+            query_part = sql.SQL(
+                """
+                    SELECT 
+                        {type} AS set_name, 
+                        {name_alias}.osm_ids, 
+                        {name_alias}.geom, 
+                        {name_alias}.tags, 
+                        {first_name_alias}.osm_ids AS primary_osm_id
+                    FROM {first_id} {first_name_alias}
+                    {joins}"""
+            ).format(
+                type=sql.Literal(node_name),
+                name_alias=sql.Identifier(node_name),
+                first_id=first_id,
+                first_name_alias=first_name,
+                joins=all_joins,
+            )
+
+            final_queries.append(query_part)
+        else:
+            # Handle isolated nodes that are not referenced by any edge
+            isolated_query = sql.SQL(
+                """
                 SELECT 
                     {type} AS set_name, 
                     {name_alias}.osm_ids, 
                     {name_alias}.geom, 
-                    {name_alias}.tags, 
-                    {first_name_alias}.osm_ids AS primary_osm_id
-                FROM {first_id} {first_name_alias}
-                {joins}"""
-        ).format(
-            type=sql.Literal(node_name),
-            name_alias=sql.Identifier(node_name),
-            first_id=first_id,
-            first_name_alias=first_name,
-            joins=all_joins,
-        )
-
-        final_queries.append(query_part)
+                    {name_alias}.tags,
+                    NULL AS primary_osm_id
+                FROM {id} {name_alias}
+                """
+            ).format(
+                type=sql.Literal(node_name),
+                name_alias=sql.Identifier(node_name),
+                id=sql.Identifier(str(node["id"])),
+            )
+            final_queries.append(isolated_query)
 
     # Combine all SQL queries using UNION ALL
     union = sql.SQL(" UNION ALL ").join(final_queries)
