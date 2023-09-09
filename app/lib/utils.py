@@ -6,6 +6,9 @@ from shapely import wkb
 from shapely.wkb import loads as wkb_loads
 from shapely.geometry import MultiPoint, LineString, Point, mapping
 from math import cos, radians
+from psycopg2 import sql
+
+from lib.ctes.construct_search_area_CTE import AreaInvalidError
 
 
 def geom_bin_to_geojson(geom_bin):
@@ -132,43 +135,82 @@ def construct_primitives_CTEs(query):
 
 
 def set_area(data):
-    type = data["a"]["t"]
+    try:
+        type = data["a"]["t"]
 
-    if not hasattr(g, "area"):
-        g.area = {}
+        if not hasattr(g, "area"):
+            g.area = {}
 
-    if type == "bbox":
-        g.area["type"] = "bbox"
-        g.area["value"] = data["a"]["v"]
-        minx, miny, maxx, maxy = data["a"]["v"]
-        center_x = (minx + maxx) / 2
-        center_y = (miny + maxy) / 2
-        g.area["center"] = [center_x, center_y]
-        g.utm = determine_utm_epsg(center_y, center_x)
+        if type == "bbox":
+            g.area["type"] = "bbox"
+            g.area["value"] = data["a"]["v"]
+            minx, miny, maxx, maxy = data["a"]["v"]
+            center_x = (minx + maxx) / 2
+            center_y = (miny + maxy) / 2
+            g.area["center"] = [center_x, center_y]
+            g.utm = determine_utm_epsg(center_y, center_x)
 
-    elif type == "polygon":
-        g.area["type"] = "polygon"
-        g.area["value"] = data["a"]["v"]
+        elif type == "polygon":
+            g.area["type"] = "polygon"
+            g.area["value"] = data["a"]["v"]
 
-    elif type == "area":
-        g.area["type"] = "area"
-        area_name = data["a"]["v"]
+        elif type == "area":
+            g.area["type"] = "area"
+            area_name = data["a"]["v"]
 
-        # Get area name from OSM Nominatim
-        url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
-        response = requests.get(url)
+            # Get area name from OSM Nominatim
+            url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
+            response = requests.get(url)
 
-        if response.status_code == 200:
-            nominatim_data = json.loads(response.text)
+            if response.status_code == 200:
+                nominatim_data = json.loads(response.text)
 
-            if len(nominatim_data) > 0 and "geojson" in nominatim_data[0]:
-                geojson = json.dumps(nominatim_data[0]["geojson"])
-                g.area["value"] = geojson
-                g.area["center"] = [
-                    float(nominatim_data[0]["lat"]),
-                    float(nominatim_data[0]["lon"]),
-                ]
-                g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
+                if len(nominatim_data) > 0 and "geojson" in nominatim_data[0]:
+                    geojson = json.dumps(nominatim_data[0]["geojson"])
+                    g.area["value"] = geojson
+                    g.area["center"] = [
+                        float(nominatim_data[0]["lat"]),
+                        float(nominatim_data[0]["lon"]),
+                    ]
+                    g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
+        check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
+    except Exception as e:
+        print(f"An error occurred in area.py: {e}")
+        raise AreaInvalidError(e)
+
+
+def check_area_surface(db, geom, geom_type, utm):
+    cursor = db.cursor()
+
+    if geom_type == "bbox":
+        query = sql.SQL(
+            "SELECT ST_Area(ST_Transform(ST_MakeEnvelope({}, {}, {}, {}, 4326), {}))"
+        ).format(
+            sql.Literal(geom[0]),
+            sql.Literal(geom[1]),
+            sql.Literal(geom[2]),
+            sql.Literal(geom[3]),
+            sql.Literal(utm),
+        )
+
+    elif geom_type == "polygon":
+        polygon_coordinates = ", ".join([f"{coord[0]} {coord[1]}" for coord in geom])
+        query = sql.SQL(
+            "SELECT ST_Area(ST_Transform(ST_GeomFromText('POLYGON(({}))', 4326), {}))"
+        ).format(sql.Literal(polygon_coordinates), sql.Literal(utm), sql.Literal(utm))
+
+    elif geom_type == "area":
+        query = sql.SQL(
+            "SELECT ST_Area(ST_Transform(ST_GeomFromGeoJSON({}), {}))"
+        ).format(sql.Literal(geom), sql.Literal(utm))
+
+    cursor.execute(query)
+    area = cursor.fetchone()[0]
+
+    area = area / 1e6
+
+    if area > 5000:
+        raise AreaInvalidError("areaExceedsLimit")
 
 
 def get_spots(results):

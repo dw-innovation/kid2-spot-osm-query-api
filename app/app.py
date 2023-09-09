@@ -4,6 +4,11 @@ from flask import Flask, request, jsonify, g
 from flask_cors import CORS
 from jsonschema import validate, exceptions
 import psycopg2
+from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
+from psycopg2.extensions import QueryCanceledError
+from lib.ctes.construct_search_area_CTE import (
+    AreaInvalidError,
+)
 from lib.utils import get_spots, set_area, results_to_geojson
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
@@ -67,7 +72,7 @@ def run_osm_query():
     try:
         validate(data, schema)
     except exceptions.ValidationError as e:
-        return jsonify({"error": str(e)}), 400
+        return jsonify({"status": "error", "message": str(e)}), 400
 
     try:
         set_area(data)
@@ -78,6 +83,7 @@ def run_osm_query():
         timer.add_checkpoint("query_construction")
 
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
+        cursor.execute("SET statement_timeout = 20000")
         cursor.execute(query)
         timer.add_checkpoint("query_execution")
 
@@ -103,13 +109,38 @@ def run_osm_query():
             "sets": {"distinct_sets": distinct_set_names, "stats": set_name_counts},
             "spots": spots,
             "timing": timer.get_all_checkpoints(),
+            "status": "success",
         }
 
         return jsonify(response), 200
 
-    except Exception as e:
-        print(e)
-        return jsonify({"error": str(e)}), 500
+    except AreaInvalidError as e:
+        timer.add_checkpoint("error")
+        response = {
+            "status": "error",
+            "errorType": "areaInvalid",
+            "message": str(e),
+            "timing": timer.get_all_checkpoints(),
+        }
+        return jsonify(response), 422
+
+    except QueryCanceledError:
+        timer.add_checkpoint("timeout")
+        response = {
+            "status": "error",
+            "errorType": "queryTimeout",
+            "timing": timer.get_all_checkpoints(),
+        }
+        return jsonify(response), 408
+
+    except (InterfaceError, ProgrammingError, DatabaseError, OperationalError) as e:
+        timer.add_checkpoint("error")
+        response = {
+            "status": "error",
+            "errorType": e,
+            "timing": timer.get_all_checkpoints(),
+        }
+        return jsonify(response), 500
 
 
 if __name__ == "__main__":
