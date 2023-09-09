@@ -72,7 +72,10 @@ def run_osm_query():
     try:
         validate(data, schema)
     except exceptions.ValidationError as e:
-        return jsonify({"status": "error", "message": str(e)}), 400
+        return (
+            jsonify({"status": "error", "errorType": "imrInvalid"}),
+            400,
+        )
 
     try:
         set_area(data)
