@@ -173,7 +173,6 @@ def set_area(data):
                         float(nominatim_data[0]["lon"]),
                     ]
                     g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
-        check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
     except Exception as e:
         print(f"An error occurred in area.py: {e}")
         raise AreaInvalidError(e)

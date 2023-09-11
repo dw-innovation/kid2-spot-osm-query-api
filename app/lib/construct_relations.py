@@ -18,9 +18,16 @@ def construct_relations(imr):
 
     # Loop through each edge in the input graph
     for edge in edges:
+        src_id = edge["src"]
+        tgt_id = edge["tgt"]
+
+        if src_id == tgt_id:
+            raise ValueError("selfReferencingEdge")
+
         # Get source and target node names
-        src_name = id_to_name[edge["src"]]
-        tgt_name = id_to_name[edge["tgt"]]
+
+        src_name = id_to_name[src_id]
+        tgt_name = id_to_name[tgt_id]
 
         referenced_nodes.add(id_to_name[edge["src"]])
         referenced_nodes.add(id_to_name[edge["tgt"]])

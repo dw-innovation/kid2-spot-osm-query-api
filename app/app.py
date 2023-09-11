@@ -6,6 +6,7 @@ from jsonschema import validate, exceptions
 import psycopg2
 from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
 from psycopg2.extensions import QueryCanceledError
+from lib.utils import check_area_surface
 from lib.ctes.construct_search_area_CTE import (
     AreaInvalidError,
 )
@@ -59,8 +60,28 @@ def get_osm_query():
         query = constructor.construct_query_from_graph(data)
         return query.as_string(cursor)
 
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except AreaInvalidError as e:
+        response = {
+            "status": "error",
+            "errorType": "areaInvalid",
+            "message": str(e),
+        }
+        return jsonify(response), 422
+
+    except ValueError as e:
+        response = {
+            "status": "error",
+            "errorType": "valueError",
+            "message": str(e),
+        }
+        return jsonify(response), 400
+
+    except (InterfaceError, ProgrammingError, DatabaseError, OperationalError) as e:
+        response = {
+            "status": "error",
+            "errorType": str(e),
+        }
+        return jsonify(response), 500
 
 
 @app.route("/run-osm-query", methods=["POST"])
@@ -80,6 +101,7 @@ def run_osm_query():
     try:
         set_area(data)
         timer.add_checkpoint("area_setting")
+        check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
 
         query = constructor.construct_query_from_graph(data)
 
@@ -87,6 +109,7 @@ def run_osm_query():
 
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
         cursor.execute("SET statement_timeout = 20000")
+        db.commit()
         cursor.execute(query)
         timer.add_checkpoint("query_execution")
 
@@ -136,11 +159,21 @@ def run_osm_query():
         }
         return jsonify(response), 408
 
+    except ValueError as e:
+        timer.add_checkpoint("error")
+        response = {
+            "status": "error",
+            "errorType": "valueError",
+            "message": str(e),
+            "timing": timer.get_all_checkpoints(),
+        }
+        return jsonify(response), 400
+
     except (InterfaceError, ProgrammingError, DatabaseError, OperationalError) as e:
         timer.add_checkpoint("error")
         response = {
             "status": "error",
-            "errorType": e,
+            "errorType": str(e),
             "timing": timer.get_all_checkpoints(),
         }
         return jsonify(response), 500
