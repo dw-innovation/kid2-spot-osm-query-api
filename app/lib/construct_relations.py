@@ -139,14 +139,14 @@ def construct_relations(imr):
 
     final_query = sql.SQL(
         """ 
-            SELECT DISTINCT ON (osm_ids)
+            SELECT 
                 subquery.set_name, 
                 subquery.osm_ids, 
                 subquery.geom, 
                 subquery.tags, 
-                subquery.primary_osm_id
+                array_agg(DISTINCT subquery.primary_osm_id) AS primary_osm_ids
             FROM ({query}) AS subquery
-            ORDER BY osm_ids;"""
+            GROUP BY subquery.set_name, subquery.osm_ids, subquery.geom, subquery.tags;"""
     ).format(query=union)
 
     return final_query
