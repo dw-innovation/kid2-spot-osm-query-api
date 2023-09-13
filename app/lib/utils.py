@@ -4,9 +4,10 @@ from flask import g
 import requests
 from shapely import wkb
 from shapely.wkb import loads as wkb_loads
-from shapely.geometry import MultiPoint, LineString, Point, mapping
+from shapely.geometry import MultiPoint, LineString, Point, mapping, shape
 from math import cos, radians
 from psycopg2 import sql
+
 
 from lib.ctes.construct_search_area_CTE import AreaInvalidError
 
@@ -18,6 +19,16 @@ def geom_bin_to_geojson(geom_bin):
 
     geom_wkt = wkb.loads(geom_bin, hex=True)  # Convert binary geometry to WKT
     return mapping(geom_wkt)  # Convert WKT to GeoJSON
+
+
+def add_center_to_geojson(geojson_feature):
+    """
+    Add a center point to a GeoJSON feature.
+    """
+    geometry_shape = shape(geojson_feature["geometry"])
+    centroid = geometry_shape.centroid
+    center_point = Point(centroid.x, centroid.y).__geo_interface__
+    geojson_feature["properties"]["center"] = center_point
 
 
 def results_to_geojson(results):
@@ -40,6 +51,9 @@ def results_to_geojson(results):
             "geometry": geom_geojson,
             "properties": result,
         }
+
+        add_center_to_geojson(feature)  # Add center point to the feature
+
         features.append(feature)
 
     geojson = {
@@ -61,6 +75,7 @@ def distance_to_meters(distance_str):
         "km": 1000,
         "ft": 0.3048,
         "mile": 1609.34,
+        "miles": 1609.34,
         "mi": 1609.34,
         "yd": 0.9144,
         "in": 0.0254,
@@ -70,6 +85,7 @@ def distance_to_meters(distance_str):
 
     # Use regex to extract value and unit
     match = re.match(r"(?P<value>[\d.]+)\s?(?P<unit>[a-zA-Z]*)", distance_str)
+
     if not match:
         raise ValueError(f"Invalid format: {distance_str}")
 
