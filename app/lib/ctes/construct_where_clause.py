@@ -29,32 +29,25 @@ def construct_filter(filter):
     value = filter.get("v", None)
     operator = filter.get("op", None)
 
-    if operator == "=":
-        return sql.SQL("tags->> {key} = {value}").format(
-            key=sql.Literal(key), value=sql.Literal(value)
-        )
+    try:
+        if operator in [">", "<"]:
+            value = float(value)
+    except ValueError:
+        print(f"Error converting value '{value}' to integer for key '{key}'.")
+        return ""
 
-    if operator == "~":
-        return sql.SQL("tags->> {key} ~ {value}").format(
-            key=sql.Literal(key), value=sql.Literal(value)
-        )
+    operator_to_sql = {
+        "=": "tags->> {key} = {value}",
+        "~": "tags->> {key} ~ {value}",
+        ">": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}",
+        "<": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}",
+    }
 
-    if operator == ">":
-        try:
-            value = int(value)
-            return sql.SQL(
-                "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}"
-            ).format(key=sql.Literal(key), value=sql.Literal(value))
-        except ValueError:
-            print(f"Error converting value '{value}' to integer for key '{key}'.")
-            return ""
+    sql_template = operator_to_sql.get(operator)
+    if not sql_template:
+        return ""
 
-    if operator == "<":
-        try:
-            value = int(value)
-            return sql.SQL(
-                "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}"
-            ).format(key=sql.Literal(key), value=sql.Literal(value))
-        except ValueError:
-            print(f"Error converting value '{value}' to integer for key '{key}'.")
-            return ""
+    return sql.SQL(sql_template).format(
+        key=sql.Literal(key),
+        value=sql.Literal(value),
+    )
