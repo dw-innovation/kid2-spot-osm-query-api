@@ -12,7 +12,28 @@
         },
         "n": { "type": "string" }
       },
-      "required": ["k", "v", "op", "n"]
+      "required": ["k", "v", "op"]
+    },
+    "NestedCondition": {
+      "oneOf": [
+        {
+          "$ref": "#/definitions/Condition"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "and": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/NestedCondition" }
+            },
+            "or": {
+              "type": "array",
+              "items": { "$ref": "#/definitions/NestedCondition" }
+            }
+          },
+          "oneOf": [{ "required": ["and"] }, { "required": ["or"] }]
+        }
+      ]
     },
     "Cluster": {
       "type": "object",
@@ -35,9 +56,7 @@
         "n": { "type": "string" },
         "flts": {
           "type": "array",
-          "items": {
-            "anyOf": [{ "$ref": "#/definitions/Condition" }]
-          }
+          "items": { "$ref": "#/definitions/NestedCondition" }
         },
         "t": { "type": "string", "const": "nwr" }
       },
