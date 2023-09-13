@@ -6,18 +6,25 @@ def construct_CTE_where_clause(filters, area=None):
         return ""
 
     area_filter = sql.SQL("geom && (SELECT geom FROM envelope)")
-
-    where_filters = [construct_filter(filter) for filter in filters]
+    where_filters = [construct_filter(f) for f in filters]
 
     if area_filter:
         where_filters.insert(0, area_filter)
 
-    whereClause = sql.SQL(" AND ").join(where_filters)
-
-    return whereClause
+    return sql.SQL(" AND ").join(where_filters)
 
 
 def construct_filter(filter):
+    if "and" in filter:
+        return sql.SQL("({})").format(
+            sql.SQL(" AND ").join([construct_filter(f) for f in filter["and"]])
+        )
+
+    if "or" in filter:
+        return sql.SQL("({})").format(
+            sql.SQL(" OR ").join([construct_filter(f) for f in filter["or"]])
+        )
+
     key = filter.get("k", None)
     value = filter.get("v", None)
     operator = filter.get("op", None)
