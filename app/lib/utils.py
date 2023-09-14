@@ -234,13 +234,13 @@ def get_spots(results):
     spots = []
 
     for record in results:
-        primary_osm_id = record["primary_osm_id"]  # Assuming this is an array
+        primary_osm_id = record["primary_osm_ids"]  # Assuming this is an array
 
         for primary_osm_id in primary_osm_id:
-            if record["osm_id"] == primary_osm_id:
+            if record["osm_ids"] == primary_osm_id:
                 grouped[primary_osm_id]["tags"] = record["tags"]
 
-            grouped[primary_osm_id]["nodes"].append(record["osm_id"])
+            grouped[primary_osm_id]["nodes"].append(record["osm_ids"])
 
             geom = wkb_loads(record["geom"], hex=False)
             coords = []

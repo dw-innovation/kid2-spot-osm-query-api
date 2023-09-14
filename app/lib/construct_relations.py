@@ -4,8 +4,10 @@ from psycopg2 import sql
 
 
 def construct_relations(imr):
-    edges = imr["es"]
-    nodes = imr["ns"]
+    edges = imr.get(
+        "es", []
+    )  # Get edges from input map relation, set to empty list if not found
+    nodes = imr.get("ns", None)  # Get nodes from input map relation
 
     # Create a set to keep track of all nodes that are either source or target
     referenced_nodes = set()
