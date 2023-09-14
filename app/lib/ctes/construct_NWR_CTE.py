@@ -7,7 +7,6 @@ from .construct_where_clause import construct_CTE_where_clause
 def construct_NWR_CTE(node, area):
     set_id = node.get("id", "id")
     set_name = node.get("n", "name")
-    CTE_name = f"nwr_{set_id}_{set_name}".replace(" ", "_")
     filters = construct_CTE_where_clause(node.get("flts", []), area)
 
     query = sql.SQL(
@@ -16,7 +15,7 @@ def construct_NWR_CTE(node, area):
             {set_id} AS set_id,
             ST_Transform(geom, {utm}) AS transformed_geom,
             geom,
-            node_id AS osm_ids,
+            primitive_type || '/' || node_id AS osm_ids,
             {set_id} AS set_id,
             {set_name} AS set_name,
             tags,
