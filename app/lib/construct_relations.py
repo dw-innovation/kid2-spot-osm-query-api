@@ -105,6 +105,7 @@ def construct_relations(imr):
                         {name_alias}.osm_ids, 
                         {name_alias}.geom, 
                         {name_alias}.tags, 
+                        {name_alias}.primitive_type,
                         {first_name_alias}.osm_ids AS primary_osm_id
                     FROM {first_id} {first_name_alias}
                     {joins}"""
@@ -126,6 +127,7 @@ def construct_relations(imr):
                     {name_alias}.osm_ids, 
                     {name_alias}.geom, 
                     {name_alias}.tags,
+                    {name_alias}.primitive_type,
                     NULL AS primary_osm_id
                 FROM {id} {name_alias}
                 """
@@ -146,9 +148,10 @@ def construct_relations(imr):
                 subquery.osm_ids, 
                 subquery.geom, 
                 subquery.tags, 
-                array_agg(DISTINCT subquery.primary_osm_id) AS primary_osm_ids
+                array_agg(DISTINCT subquery.primary_osm_id) AS primary_osm_ids,
+                subquery.primitive_type
             FROM ({query}) AS subquery
-            GROUP BY subquery.set_name, subquery.osm_ids, subquery.geom, subquery.tags;"""
+            GROUP BY subquery.set_name, subquery.osm_ids, subquery.geom, subquery.tags, subquery.primitive_type;"""
     ).format(query=union)
 
     return final_query

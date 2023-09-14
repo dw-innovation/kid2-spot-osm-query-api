@@ -19,7 +19,8 @@ def construct_NWR_CTE(node, area):
             node_id AS osm_ids,
             {set_id} AS set_id,
             {set_name} AS set_name,
-            tags
+            tags,
+            primitive_type
         FROM
             {table_view}
         WHERE
