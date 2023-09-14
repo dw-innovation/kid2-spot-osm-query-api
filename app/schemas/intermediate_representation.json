@@ -133,5 +133,5 @@
       }
     }
   },
-  "required": ["a", "ns", "es"]
+  "required": ["a", "ns"]
 }
