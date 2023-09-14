@@ -7,6 +7,7 @@ from shapely.wkb import loads as wkb_loads
 from shapely.geometry import MultiPoint, LineString, Point, mapping, shape
 from math import cos, radians
 from psycopg2 import sql
+from collections import defaultdict
 
 
 from lib.ctes.construct_search_area_CTE import AreaInvalidError
@@ -229,29 +230,29 @@ def check_area_surface(db, geom, geom_type, utm):
 
 
 def get_spots(results):
-    grouped = {}
+    grouped = defaultdict(lambda: {"coords": [], "tags": None, "nodes": []})
     spots = []
 
     for record in results:
-        primary_osm_id = record["primary_osm_id"]
+        primary_osm_id = record["primary_osm_id"]  # Assuming this is an array
 
-        if primary_osm_id not in grouped:
-            grouped[primary_osm_id] = {"coords": [], "tags": None}
+        for primary_osm_id in primary_osm_id:
+            if record["osm_id"] == primary_osm_id:
+                grouped[primary_osm_id]["tags"] = record["tags"]
 
-        if record["osm_ids"] == primary_osm_id:
-            grouped[primary_osm_id]["tags"] = record["tags"]
+            grouped[primary_osm_id]["nodes"].append(record["osm_id"])
 
-        geom = wkb_loads(record["geom"], hex=False)
-        coords = []
+            geom = wkb_loads(record["geom"], hex=False)
+            coords = []
 
-        if isinstance(geom, Point):
-            coords = [geom.coords[0]]
-        elif isinstance(geom, LineString):
-            coords = list(geom.coords)
-        else:
-            coords = list(geom.exterior.coords)
+            if isinstance(geom, Point):
+                coords = [geom.coords[0]]
+            elif isinstance(geom, LineString):
+                coords = list(geom.coords)
+            else:
+                coords = list(geom.exterior.coords)
 
-        grouped[primary_osm_id]["coords"].extend(coords)
+            grouped[primary_osm_id]["coords"].extend(coords)
 
     buffer_meters = 100
     buffer_lat = buffer_meters / 111000.0
@@ -268,7 +269,8 @@ def get_spots(results):
 
         bbox = [minx, miny, maxx, maxy]
         tags = data["tags"]
+        nodes = list(set(data["nodes"]))  # Remove duplicates
 
-        spots.append({"bbox": bbox, "id": primary_osm_id, "tags": tags})
+        spots.append({"bbox": bbox, "id": primary_osm_id, "tags": tags, "nodes": nodes})
 
     return spots
