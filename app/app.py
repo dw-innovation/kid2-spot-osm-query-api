@@ -6,11 +6,16 @@ from jsonschema import validate, exceptions
 import psycopg2
 from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
 from psycopg2.extensions import QueryCanceledError
-from lib.utils import check_area_surface
 from lib.ctes.construct_search_area_CTE import (
     AreaInvalidError,
 )
-from lib.utils import get_spots, set_area, results_to_geojson
+from lib.utils import (
+    get_spots,
+    set_area,
+    results_to_geojson,
+    check_area_surface,
+    validate_imr,
+)
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
 from collections import Counter
@@ -43,15 +48,31 @@ def teardown(e=None):
     close_db(e)
 
 
+@app.route("/validate-imr", methods=["POST"])
+def validate_imr_route():
+    data = request.json
+
+    try:
+        validate(data, schema)
+        validate_imr(data)
+        return jsonify({"status": "success"}), 200
+    except (exceptions.ValidationError, ValueError) as e:
+        return (
+            jsonify({"status": "error", "errorType": "imrInvalid", "message": str(e)}),
+            400,
+        )
+
+
 @app.route("/get-osm-query", methods=["POST"])
-def get_osm_query():
+def get_osm_query_route():
     data = request.json
     db = get_db()
     cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
         validate(data, schema)
-    except exceptions.ValidationError as e:
+        validate_imr(data)
+    except (exceptions.ValidationError, ValueError) as e:
         print(e)
         return jsonify({"error": str(e)}), 400
 
@@ -85,16 +106,17 @@ def get_osm_query():
 
 
 @app.route("/run-osm-query", methods=["POST"])
-def run_osm_query():
+def run_osm_query_route():
     timer = Timer()
     data = request.json
     db = get_db()
 
     try:
         validate(data, schema)
-    except exceptions.ValidationError as e:
+        validate_imr(data)
+    except (exceptions.ValidationError, ValueError) as e:
         return (
-            jsonify({"status": "error", "errorType": "imrInvalid"}),
+            jsonify({"status": "error", "errorType": "imrInvalid", "message": str(e)}),
             400,
         )
 

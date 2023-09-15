@@ -274,3 +274,62 @@ def get_spots(results):
         spots.append({"bbox": bbox, "id": primary_osm_id, "tags": tags, "nodes": nodes})
 
     return spots
+
+
+def validate_imr(imr):
+    edges, nodes = imr.get("es"), imr.get("ns")
+
+    if nodes is None:
+        raise ValueError("missingNodes")
+
+    min_id = min(node["id"] for node in nodes)
+
+    if nodes[0]["id"] != min_id:
+        raise ValueError("lowestIdNodeNotFirst")
+
+    node_ids = {node["id"] for node in nodes}
+    node_ns = {node["n"] for node in nodes}
+    seen_edges = set()
+    edge_ids = set()
+    src_to_tgt = {}
+
+    if len(node_ids) != len(nodes):
+        raise ValueError("duplicateNodeIds")
+
+    if len(node_ns) != len(nodes):
+        raise ValueError("duplicateNodeNs")
+
+    if edges is None:
+        return
+
+    for edge in edges:
+        edge_id, src, tgt = edge.get("id"), edge.get("src"), edge.get("tgt")
+        edge_tuple = frozenset([src, tgt])
+
+        if edge_id in edge_ids:
+            raise ValueError("duplicateEdgeIds")
+
+        edge_ids.add(edge_id)
+
+        if None in [src, tgt]:
+            raise ValueError("missingEdgeSrcOrTgt")
+
+        if src == tgt:
+            raise ValueError("selfReferencingEdge")
+
+        if edge_tuple in seen_edges:
+            raise ValueError("duplicateOrInvertedEdge")
+
+        seen_edges.add(edge_tuple)
+
+        if not {src, tgt}.issubset(node_ids):
+            raise ValueError("edgeSrcOrTgtNotInNodes")
+
+        if src not in src_to_tgt:
+            src_to_tgt[src] = []
+
+        src_to_tgt[src].append(tgt)
+
+    for src, tgts in src_to_tgt.items():
+        if tgts != sorted(tgts):
+            raise ValueError("tgtNotSortedForSrc")
