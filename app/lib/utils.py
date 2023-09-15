@@ -282,16 +282,10 @@ def validate_imr(imr):
     if nodes is None:
         raise ValueError("missingNodes")
 
-    min_id = min(node["id"] for node in nodes)
-
-    if nodes[0]["id"] != min_id:
-        raise ValueError("lowestIdNodeNotFirst")
-
     node_ids = {node["id"] for node in nodes}
     node_ns = {node["n"] for node in nodes}
-    seen_edges = set()
     edge_ids = set()
-    src_to_tgt = {}
+    seen_edges = set()
 
     if len(node_ids) != len(nodes):
         raise ValueError("duplicateNodeIds")
@@ -304,12 +298,17 @@ def validate_imr(imr):
 
     for edge in edges:
         edge_id, src, tgt = edge.get("id"), edge.get("src"), edge.get("tgt")
-        edge_tuple = frozenset([src, tgt])
 
         if edge_id in edge_ids:
             raise ValueError("duplicateEdgeIds")
 
         edge_ids.add(edge_id)
+
+        edge_tuple = (min(src, tgt), max(src, tgt))
+        if edge_tuple in seen_edges:
+            raise ValueError("duplicateOrInvertedEdge")
+
+        seen_edges.add(edge_tuple)
 
         if None in [src, tgt]:
             raise ValueError("missingEdgeSrcOrTgt")
@@ -317,19 +316,24 @@ def validate_imr(imr):
         if src == tgt:
             raise ValueError("selfReferencingEdge")
 
-        if edge_tuple in seen_edges:
-            raise ValueError("duplicateOrInvertedEdge")
-
-        seen_edges.add(edge_tuple)
-
         if not {src, tgt}.issubset(node_ids):
             raise ValueError("edgeSrcOrTgtNotInNodes")
 
-        if src not in src_to_tgt:
-            src_to_tgt[src] = []
 
-        src_to_tgt[src].append(tgt)
+def fix_imr(imr):
+    nodes, edges = imr.get("ns", []), imr.get("es", [])
 
-    for src, tgts in src_to_tgt.items():
-        if tgts != sorted(tgts):
-            raise ValueError("tgtNotSortedForSrc")
+    # Sort nodes by 'id'
+    sorted_nodes = sorted(nodes, key=lambda x: x["id"])
+    imr["ns"] = sorted_nodes
+
+    # Invert 'src' and 'tgt' where 'tgt' is not greater than 'src' and sort edges
+    for edge in edges:
+        src, tgt = edge.get("src"), edge.get("tgt")
+        if src >= tgt:
+            edge["src"], edge["tgt"] = tgt, src
+
+    sorted_edges = sorted(edges, key=lambda x: (x["src"], x["tgt"]))
+    imr["es"] = sorted_edges
+
+    return imr
