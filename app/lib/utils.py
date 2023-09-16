@@ -284,7 +284,6 @@ def validate_imr(imr):
 
     node_ids = {node["id"] for node in nodes}
     node_ns = {node["n"] for node in nodes}
-    edge_ids = set()
     seen_edges = set()
 
     if len(node_ids) != len(nodes):
@@ -297,12 +296,7 @@ def validate_imr(imr):
         return
 
     for edge in edges:
-        edge_id, src, tgt = edge.get("id"), edge.get("src"), edge.get("tgt")
-
-        if edge_id in edge_ids:
-            raise ValueError("duplicateEdgeIds")
-
-        edge_ids.add(edge_id)
+        src, tgt = edge.get("src"), edge.get("tgt")
 
         edge_tuple = (min(src, tgt), max(src, tgt))
         if edge_tuple in seen_edges:
