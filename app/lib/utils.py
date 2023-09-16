@@ -130,27 +130,6 @@ def determine_utm_epsg(latitude, longitude):
         raise ValueError("Longitude out of range.")
 
 
-def construct_primitives_CTEs(query):
-    primitives = ["node", "way", "relation"]
-
-    cte_query_parts = [
-        f"""
-        {primitive}s_CTE AS (
-            {query.replace("[primitive]", primitive)}
-        )"""
-        for primitive in primitives
-    ]
-
-    concatenated_ctes = "WITH " + ", ".join(cte_query_parts)
-    union_clauses = " UNION ALL ".join(
-        f"SELECT * FROM {primitive}s_CTE" for primitive in primitives
-    )
-
-    cte = f"""{concatenated_ctes}{union_clauses}"""
-
-    return cte
-
-
 def set_area(data):
     try:
         type = data["a"]["t"]
@@ -279,6 +258,11 @@ def get_spots(results):
 def validate_imr(imr):
     edges, nodes = imr.get("es"), imr.get("ns")
 
+    for node in nodes:
+        flts = node.get("flts")
+        if not validate_has_filter(flts):
+            raise ValueError(f"missingFilterInNode")
+
     if nodes is None:
         raise ValueError("missingNodes")
 
@@ -312,6 +296,22 @@ def validate_imr(imr):
 
         if not {src, tgt}.issubset(node_ids):
             raise ValueError("edgeSrcOrTgtNotInNodes")
+
+
+def validate_has_filter(filter_nodes):
+    if not filter_nodes:
+        return False
+
+    for filter_node in filter_nodes:
+        if "k" in filter_node:
+            return True
+        elif "and" in filter_node:
+            if validate_has_filter(filter_node["and"]):
+                return True
+        elif "or" in filter_node:
+            if validate_has_filter(filter_node["or"]):
+                return True
+    return False
 
 
 def fix_imr(imr):
