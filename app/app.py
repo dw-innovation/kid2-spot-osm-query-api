@@ -21,10 +21,13 @@ from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
 from collections import Counter
 from lib.timer import Timer
+from flask_compress import Compress
 
 environment = os.getenv("ENVIRONMENT") or "production"
 
+compress = Compress()
 app = Flask(__name__)
+compress.init_app(app)
 CORS(app)
 
 DATABASE = {
