@@ -5,3 +5,5 @@ psycopg2==2.9.7
 Requests==2.31.0
 Shapely==2.0.1
 flask_compress==1.14
+gunicorn==21.2.0
+Werkzeug==2.3.7
