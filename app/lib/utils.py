@@ -132,15 +132,15 @@ def determine_utm_epsg(latitude, longitude):
 
 def set_area(data):
     try:
-        type = data["a"]["t"]
+        type = data["area"]["type"]
 
         if not hasattr(g, "area"):
             g.area = {}
 
         if type == "bbox":
             g.area["type"] = "bbox"
-            g.area["value"] = data["a"]["v"]
-            minx, miny, maxx, maxy = data["a"]["v"]
+            g.area["value"] = data["area"]["value"]
+            minx, miny, maxx, maxy = data["area"]["value"]
             center_x = (minx + maxx) / 2
             center_y = (miny + maxy) / 2
             g.area["center"] = [center_x, center_y]
@@ -148,11 +148,11 @@ def set_area(data):
 
         elif type == "polygon":
             g.area["type"] = "polygon"
-            g.area["value"] = data["a"]["v"]
+            g.area["value"] = data["area"]["value"]
 
         elif type == "area":
             g.area["type"] = "area"
-            area_name = data["a"]["v"]
+            area_name = data["area"]["value"]
 
             # Get area name from OSM Nominatim
             url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
@@ -256,46 +256,46 @@ def get_spots(results):
 
 
 def validate_imr(imr):
-    edges, nodes = imr.get("es"), imr.get("ns")
+    edges, nodes = imr.get("edges"), imr.get("nodes")
 
     for node in nodes:
-        flts = node.get("flts")
-        if not validate_has_filter(flts):
+        filters = node.get("filters")
+        if not validate_has_filter(filters):
             raise ValueError(f"missingFilterInNode")
 
     if nodes is None:
         raise ValueError("missingNodes")
 
     node_ids = {node["id"] for node in nodes}
-    node_ns = {node["n"] for node in nodes}
+    node_names = {node["name"] for node in nodes}
     seen_edges = set()
 
     if len(node_ids) != len(nodes):
         raise ValueError("duplicateNodeIds")
 
-    if len(node_ns) != len(nodes):
-        raise ValueError("duplicateNodeNs")
+    if len(node_names) != len(nodes):
+        raise ValueError("duplicateNodeNames")
 
     if edges is None:
         return
 
     for edge in edges:
-        src, tgt = edge.get("src"), edge.get("tgt")
+        source, target = edge.get("source"), edge.get("target")
 
-        edge_tuple = (min(src, tgt), max(src, tgt))
+        edge_tuple = (min(source, target), max(source, target))
         if edge_tuple in seen_edges:
             raise ValueError("duplicateOrInvertedEdge")
 
         seen_edges.add(edge_tuple)
 
-        if None in [src, tgt]:
-            raise ValueError("missingEdgeSrcOrTgt")
+        if None in [source, target]:
+            raise ValueError("missingEdgeSourceOrTarget")
 
-        if src == tgt:
+        if source == target:
             raise ValueError("selfReferencingEdge")
 
-        if not {src, tgt}.issubset(node_ids):
-            raise ValueError("edgeSrcOrTgtNotInNodes")
+        if not {source, target}.issubset(node_ids):
+            raise ValueError("edgeSourceOrTargetNotInNodes")
 
 
 def validate_has_filter(filter_nodes):
@@ -303,7 +303,7 @@ def validate_has_filter(filter_nodes):
         return False
 
     for filter_node in filter_nodes:
-        if "k" in filter_node:
+        if "key" in filter_node:
             return True
         elif "and" in filter_node:
             if validate_has_filter(filter_node["and"]):
@@ -315,19 +315,19 @@ def validate_has_filter(filter_nodes):
 
 
 def fix_imr(imr):
-    nodes, edges = imr.get("ns", []), imr.get("es", [])
+    nodes, edges = imr.get("nodes", []), imr.get("edges", [])
 
     # Sort nodes by 'id'
     sorted_nodes = sorted(nodes, key=lambda x: x["id"])
-    imr["ns"] = sorted_nodes
+    imr["nodes"] = sorted_nodes
 
-    # Invert 'src' and 'tgt' where 'tgt' is not greater than 'src' and sort edges
+    # Invert 'source' and 'target' where 'target' is not greater than 'source' and sort edges
     for edge in edges:
-        src, tgt = edge.get("src"), edge.get("tgt")
-        if src >= tgt:
-            edge["src"], edge["tgt"] = tgt, src
+        source, target = edge.get("source"), edge.get("target")
+        if source >= target:
+            edge["source"], edge["target"] = target, source
 
-    sorted_edges = sorted(edges, key=lambda x: (x["src"], x["tgt"]))
-    imr["es"] = sorted_edges
+    sorted_edges = sorted(edges, key=lambda x: (x["source"], x["target"]))
+    imr["edges"] = sorted_edges
 
     return imr

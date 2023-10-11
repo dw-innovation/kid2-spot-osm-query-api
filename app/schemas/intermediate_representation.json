@@ -4,15 +4,15 @@
     "Condition": {
       "type": "object",
       "properties": {
-        "k": { "type": "string" },
-        "v": { "type": "string" },
-        "op": {
+        "key": { "type": "string" },
+        "value": { "type": "string" },
+        "operator": {
           "type": "string",
           "enum": ["=", "<", ">", "~"]
         },
-        "n": { "type": "string" }
+        "name": { "type": "string" }
       },
-      "required": ["k", "v", "op"]
+      "required": ["key", "value", "operator"]
     },
     "NestedCondition": {
       "oneOf": [
@@ -39,37 +39,37 @@
       "type": "object",
       "properties": {
         "id": { "type": "number" },
-        "flts": {
+        "filters": {
           "type": "array",
           "items": { "$ref": "#/definitions/Condition" }
         },
-        "t": { "type": "string", "enum": ["cluster"] },
-        "minPts": { "type": "number" },
-        "maxDist": { "type": "string" }
+        "type": { "type": "string", "const": "cluster" },
+        "minPoints": { "type": "number" },
+        "maxDistance": { "type": "string" }
       },
-      "required": ["id", "flts", "t", "minPts", "maxDist"]
+      "required": ["id", "filters", "type", "minPoints", "maxDistance"]
     },
     "NWR": {
       "type": "object",
       "properties": {
         "id": { "type": "number" },
-        "n": { "type": "string" },
-        "flts": {
+        "name": { "type": "string" },
+        "filters": {
           "type": "array",
           "items": { "$ref": "#/definitions/NestedCondition" }
         },
-        "t": { "type": "string", "const": "nwr" }
+        "type": { "type": "string", "const": "nwr" }
       },
-      "required": ["id", "n", "flts", "t"]
+      "required": ["id", "name", "filters", "type"]
     }
   },
   "type": "object",
   "properties": {
-    "a": {
+    "area": {
       "type": "object",
       "properties": {
-        "t": { "type": "string", "enum": ["bbox", "polygon", "area"] },
-        "v": {
+        "type": { "type": "string", "enum": ["bbox", "polygon", "area"] },
+        "value": {
           "oneOf": [
             {
               "type": "array",
@@ -95,9 +95,9 @@
           ]
         }
       },
-      "required": ["t", "v"]
+      "required": ["type", "value"]
     },
-    "ns": {
+    "nodes": {
       "type": "array",
       "items": {
         "oneOf": [
@@ -106,32 +106,32 @@
         ]
       }
     },
-    "es": {
+    "edges": {
       "type": "array",
       "items": {
         "oneOf": [
           {
             "type": "object",
             "properties": {
-              "src": { "type": "number" },
-              "tgt": { "type": "number" },
-              "t": { "type": "string", "const": "dist" },
-              "dist": { "type": "string" }
+              "source": { "type": "number" },
+              "target": { "type": "number" },
+              "type": { "type": "string", "const": "distance" },
+              "distance": { "type": "string" }
             },
-            "required": ["src", "tgt", "t", "dist"]
+            "required": ["source", "target", "type", "distance"]
           },
           {
             "type": "object",
             "properties": {
-              "src": { "type": "number" },
-              "tgt": { "type": "number" },
-              "t": { "type": "string", "const": "cnt" }
+              "source": { "type": "number" },
+              "target": { "type": "number" },
+              "type": { "type": "string", "const": "contains" }
             },
-            "required": ["src", "tgt", "t"]
+            "required": ["source", "target", "type"]
           }
         ]
       }
     }
   },
-  "required": ["a", "ns"]
+  "required": ["area", "nodes"]
 }

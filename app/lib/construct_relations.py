@@ -5,82 +5,84 @@ from psycopg2 import sql
 
 def construct_relations(imr):
     edges = imr.get(
-        "es", []
+        "edges", []
     )  # Get edges from input map relation, set to empty list if not found
-    nodes = imr.get("ns", None)  # Get nodes from input map relation
+    nodes = imr.get("nodes", None)  # Get nodes from input map relation
 
     # Create a set to keep track of all nodes that are either source or target
     referenced_nodes = set()
 
     # Creating a mapping from node IDs to node names
-    id_to_name = {node["id"]: node["n"] for node in nodes}
+    id_to_name = {node["id"]: node["name"] for node in nodes}
 
     # Using defaultdict to manage the join conditions for each target node
     join_conditions = defaultdict(list)
 
     # Loop through each edge in the input graph
     for edge in edges:
-        src_id = edge["src"]
-        tgt_id = edge["tgt"]
+        source_id = edge["source"]
+        target_id = edge["target"]
 
-        if src_id == tgt_id:
+        if source_id == target_id:
             raise ValueError("selfReferencingEdge")
 
         # Get source and target node names
 
-        src_name = id_to_name[src_id]
-        tgt_name = id_to_name[tgt_id]
+        source_name = id_to_name[source_id]
+        target_name = id_to_name[target_id]
 
-        referenced_nodes.add(id_to_name[edge["src"]])
-        referenced_nodes.add(id_to_name[edge["tgt"]])
+        referenced_nodes.add(id_to_name[edge["source"]])
+        referenced_nodes.add(id_to_name[edge["target"]])
 
         # Get the type of relation between nodes
-        type = edge["t"]
+        type = edge["type"]
 
-        # Process 'dist' (distance) type
-        if type == "dist":
-            dist = distance_to_meters(edge["dist"])  # Convert distance to meters
+        # Process 'distance' type
+        if type == "distance":
+            distance = distance_to_meters(
+                edge["distance"]
+            )  # Convert distance to meters
 
             # Formulate SQL join condition for distance
             condition = sql.SQL(
-                "ST_DWithin({src_alias}.transformed_geom, {tgt_alias}.transformed_geom, {dist})"
+                "ST_DWithin({source_alias}.transformed_geom, {target_alias}.transformed_geom, {distance})"
             ).format(
-                src_alias=sql.Identifier(src_name),
-                tgt_alias=sql.Identifier(tgt_name),
-                dist=sql.Literal(dist),
+                source_alias=sql.Identifier(source_name),
+                target_alias=sql.Identifier(target_name),
+                distance=sql.Literal(distance),
             )
 
-        # Process 'cnt' (containment) type
-        elif type == "cnt":
+        # Process 'contains' type
+        elif type == "contains":
             # Formulate SQL join condition for containment
             condition = sql.SQL(
-                "ST_Contains({src_alias}.transformed_geom, {tgt_alias}.transformed_geom)"
+                "ST_Contains({source_alias}.transformed_geom, {target_alias}.transformed_geom)"
             ).format(
-                src_alias=sql.Identifier(src_name),
-                tgt_alias=sql.Identifier(tgt_name),
+                source_alias=sql.Identifier(source_name),
+                target_alias=sql.Identifier(target_name),
             )
 
         # Add condition to corresponding target node
-        join_conditions[tgt_name].append(condition)
+        join_conditions[target_name].append(condition)
 
     # Process each target node and its conditions
     all_joins = []
-    for tgt_name, conditions in join_conditions.items():
+    for target_name, conditions in join_conditions.items():
         # Chain multiple conditions with AND
         chained_conditions = sql.SQL(" AND ").join(conditions)
 
         # Formulate SQL JOIN clause
-        join_clause = sql.SQL("JOIN {tgt} {tgt_alias} ON {conditions}").format(
-            tgt=sql.Identifier(
+        join_clause = sql.SQL("JOIN {target} {target_alias} ON {conditions}").format(
+            target=sql.Identifier(
                 str(
                     next(
-                        edge["tgt"]
+                        edge["target"]
                         for edge in edges
-                        if id_to_name[edge["tgt"]] == tgt_name
+                        if id_to_name[edge["target"]] == target_name
                     )
                 )
             ),
-            tgt_alias=sql.Identifier(tgt_name),
+            target_alias=sql.Identifier(target_name),
             conditions=chained_conditions,
         )
         all_joins.append(join_clause)
@@ -92,9 +94,9 @@ def construct_relations(imr):
     final_queries = []
 
     for node in nodes:
-        node_name = node["n"]
+        node_name = node["name"]
         first_id = sql.Identifier(str(nodes[0]["id"]))
-        first_name = sql.Identifier(str(nodes[0]["n"]))
+        first_name = sql.Identifier(str(nodes[0]["name"]))
 
         if node_name in referenced_nodes:
             # Handle nodes that are referenced by at least one edge and construct SQL query with JOINs

@@ -8,8 +8,8 @@ def construct_ctes(intermediate_representation):
     ctes = []
 
     # Extract nodes and area from the intermediate representation
-    nodes = intermediate_representation["ns"]
-    area = intermediate_representation["a"]
+    nodes = intermediate_representation["nodes"]
+    area = intermediate_representation["area"]
 
     # Construct envelope CTE
     envelope_cte = construct_search_area_CTE()
@@ -28,7 +28,7 @@ def construct_ctes(intermediate_representation):
 
 def constructCTE(node, area):
     # Get the type of the node
-    type = node["t"]
+    type = node["type"]
 
     # Depending on the type of the node, construct the appropriate type of CTE
     if type == "cluster":

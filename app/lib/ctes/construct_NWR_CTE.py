@@ -6,8 +6,8 @@ from .construct_where_clause import construct_CTE_where_clause
 
 def construct_NWR_CTE(node, area):
     set_id = node.get("id", "id")
-    set_name = node.get("n", "name")
-    filters = construct_CTE_where_clause(node.get("flts", []), area)
+    set_name = node.get("name", "name")
+    filters = construct_CTE_where_clause(node.get("filters", []), area)
 
     query = sql.SQL(
         """

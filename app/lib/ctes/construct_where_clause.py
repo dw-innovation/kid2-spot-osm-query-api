@@ -25,9 +25,9 @@ def construct_filter(filter):
             sql.SQL(" OR ").join([construct_filter(f) for f in filter["or"]])
         )
 
-    key = filter.get("k", None)
-    value = filter.get("v", None)
-    operator = filter.get("op", None)
+    key = filter.get("key", None)
+    value = filter.get("value", None)
+    operator = filter.get("operator", None)
 
     try:
         if operator in [">", "<"]:

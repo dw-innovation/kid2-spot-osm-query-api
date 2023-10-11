@@ -42,9 +42,9 @@ def construct_search_area_CTE():
 
         # Handle geojson area type
         elif type == "area":
-            geometry = sql.SQL(
-                "ST_Transform(ST_GeomFromGeoJSON({geom}), {utm})"
-            ).format(geom=sql.Literal(geom), utm=sql.Literal(g.utm))
+            geometry = sql.SQL("ST_GeomFromGeoJSON({geom})").format(
+                geom=sql.Literal(geom)
+            )
 
         # Construct the CTE (Common Table Expression) using the generated geometry
         cte = sql.SQL("{envelope} AS (SELECT {geometry} AS geom)").format(
