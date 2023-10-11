@@ -11,8 +11,6 @@ COPY ./app /app
 
 RUN pip3 install --no-cache-dir -r requirements.txt
 
-RUN pip3 install gunicorn
-
 EXPOSE 5000
 
 CMD ["gunicorn", "-w", "4", "-b", ":5000", "app:app"]
