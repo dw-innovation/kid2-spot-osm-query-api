@@ -38,7 +38,7 @@ def construct_relations(imr):
         type = edge["type"]
 
         # Process 'distance' type
-        if type == "distance":
+        if type == "dist":
             distance = distance_to_meters(
                 edge["distance"]
             )  # Convert distance to meters
@@ -53,7 +53,7 @@ def construct_relations(imr):
             )
 
         # Process 'contains' type
-        elif type == "contains":
+        elif type == "cnt":
             # Formulate SQL join condition for containment
             condition = sql.SQL(
                 "ST_Contains({source_alias}.transformed_geom, {target_alias}.transformed_geom)"

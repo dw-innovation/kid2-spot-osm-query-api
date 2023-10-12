@@ -115,7 +115,7 @@
             "properties": {
               "source": { "type": "number" },
               "target": { "type": "number" },
-              "type": { "type": "string", "const": "distance" },
+              "type": { "type": "string", "const": "dist" },
               "distance": { "type": "string" }
             },
             "required": ["source", "target", "type", "distance"]
@@ -125,7 +125,7 @@
             "properties": {
               "source": { "type": "number" },
               "target": { "type": "number" },
-              "type": { "type": "string", "const": "contains" }
+              "type": { "type": "string", "const": "cnt" }
             },
             "required": ["source", "target", "type"]
           }
