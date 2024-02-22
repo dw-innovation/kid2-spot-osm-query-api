@@ -38,7 +38,7 @@ def construct_filter(filter):
 
     operator_to_sql = {
         "=": "tags->> {key} = {value}",
-        "~": "tags->> {key} ~ {value}",
+        "~": "LOWER(tags->>{key}) ~ LOWER({value})",
         ">": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}",
         "<": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}",
     }
