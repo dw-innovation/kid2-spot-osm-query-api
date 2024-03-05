@@ -44,6 +44,10 @@ def construct_filter(filter):
     }
 
     sql_template = operator_to_sql.get(operator)
+
+    if value == "***any***":
+        sql_template = "tags ? {key})"
+
     if not sql_template:
         return ""
 
