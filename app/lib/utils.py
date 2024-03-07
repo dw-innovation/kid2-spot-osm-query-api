@@ -4,7 +4,15 @@ from flask import g
 import requests
 from shapely import wkb
 from shapely.wkb import loads as wkb_loads
-from shapely.geometry import MultiPoint, LineString, Point, mapping, shape
+from shapely.geometry import (
+    MultiPolygon,
+    Polygon,
+    MultiPoint,
+    LineString,
+    Point,
+    mapping,
+    shape,
+)
 from math import cos, radians
 from psycopg2 import sql
 from collections import defaultdict
@@ -242,8 +250,18 @@ def get_spots(results):
                 coords = [geom.coords[0]]
             elif isinstance(geom, LineString):
                 coords = list(geom.coords)
-            else:
+            elif isinstance(geom, Polygon):
                 coords = list(geom.exterior.coords)
+            elif isinstance(geom, MultiPolygon):
+                for (
+                    polygon
+                ) in (
+                    geom.geoms
+                ):  # Corrected iteration over each Polygon in a MultiPolygon
+                    coords.extend(list(polygon.exterior.coords))
+
+            else:
+                pass
 
             grouped[primary_osm_id]["coords"].extend(coords)
 
