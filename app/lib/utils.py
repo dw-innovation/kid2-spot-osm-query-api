@@ -16,6 +16,7 @@ from shapely.geometry import (
 from math import cos, radians
 from psycopg2 import sql
 from collections import defaultdict
+import os
 
 
 from lib.ctes.construct_search_area_CTE import AreaInvalidError
@@ -226,7 +227,9 @@ def check_area_surface(db, geom, geom_type, utm):
 
     area = area / 1e6
 
-    if area > 5000:
+    max_area = int(os.getenv("MAX_AREA", 5000))
+
+    if area > max_area:
         raise AreaInvalidError("areaExceedsLimit")
 
 
