@@ -349,7 +349,7 @@ def validate_has_filter(filter_nodes):
     return False
 
 
-def fix_imr(imr):
+def clean_imr(imr):
     nodes, edges = imr.get("nodes", []), imr.get("edges", [])
 
     # Sort nodes by 'id'

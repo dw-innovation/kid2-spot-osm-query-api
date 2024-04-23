@@ -15,7 +15,7 @@ from lib.utils import (
     results_to_geojson,
     check_area_surface,
     validate_imr,
-    fix_imr,
+    clean_imr,
 )
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
@@ -81,7 +81,7 @@ def get_osm_query_route():
         return jsonify({"error": str(e)}), 400
 
     try:
-        data = fix_imr(data)
+        data = clean_imr(data)
         set_area(data)
         query = constructor.construct_query_from_graph(data)
         return query.as_string(cursor)
@@ -126,7 +126,7 @@ def run_osm_query_route():
         )
 
     try:
-        data = fix_imr(data)
+        data = clean_imr(data)
         set_area(data)
         timer.add_checkpoint("area_setting")
         check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
