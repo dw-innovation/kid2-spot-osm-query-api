@@ -3,16 +3,17 @@ from .construct_relations import construct_relations
 from psycopg2 import sql
 
 
-def construct_query_from_graph(intermediate_representation):
+def construct_query_from_graph(spot_query):
     try:
+        utm = get_utm()
         # Construct the node CTEs based on the intermediate representation
-        ctes = construct_ctes(intermediate_representation)
+        ctes = construct_ctes(spot_query, utm)
 
         # Combine the node constructed CTEs with the SQL WITH clause
         combined_ctes = sql.SQL("WITH ") + sql.SQL(", ").join(ctes)
 
         # Construct the relations (JOINs) based on the intermediate representation
-        relations = construct_relations(intermediate_representation)
+        relations = construct_relations(spot_query)
 
         # Combine CTEs and relations to form the final query
         final_query = sql.SQL(" ").join([combined_ctes, relations])

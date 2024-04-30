@@ -3,11 +3,11 @@ from .utils import distance_to_meters
 from psycopg2 import sql
 
 
-def construct_relations(osm_query):
-    edges = osm_query.get(
+def construct_relations(spot_query):
+    edges = spot_query.get(
         "edges", []
     )  # Get edges from input map relation, set to empty list if not found
-    nodes = osm_query.get("nodes", None)  # Get nodes from input map relation
+    nodes = spot_query.get("nodes", None)  # Get nodes from input map relation
 
     # Create a set to keep track of all nodes that are either source or target
     referenced_nodes = set()

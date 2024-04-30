@@ -2,7 +2,7 @@ import json
 import os
 from flask import Flask, request, jsonify, g
 from flask_cors import CORS
-from jsonschema import validate, exceptions
+from jsonschema import validate as validate_json_schema, exceptions
 import psycopg2
 from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
 from psycopg2.extensions import QueryCanceledError
@@ -14,8 +14,8 @@ from lib.utils import (
     set_area,
     results_to_geojson,
     check_area_surface,
-    validate_osm_query,
-    clean_osm_query,
+    validate_spot_query,
+    clean_spot_query,
 )
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
@@ -38,7 +38,7 @@ DATABASE = {
     "port": os.getenv("DATABASE_PORT"),
 }
 
-with open("./schemas/osm_query.json", "r") as file:
+with open("./schemas/spot_query.json", "r") as file:
     schema = json.load(file)
 
 
@@ -53,39 +53,41 @@ def teardown(e=None):
 
 
 @app.route("/validate-osm-query", methods=["POST"])
-def validate_osm_query_route():
+def validate_spot_query_route():
     data = request.json
 
     try:
-        validate(data, schema)
-        validate_osm_query(data)
+        validate_json_schema(data, schema)
+        validate_spot_query(data)
+
         return jsonify({"status": "success"}), 200
     except (exceptions.ValidationError, ValueError) as e:
         return (
             jsonify(
-                {"status": "error", "errorType": "osm_queryInvalid", "message": str(e)}
+                {"status": "error", "errorType": "spot_queryInvalid", "message": str(e)}
             ),
             400,
         )
 
 
 @app.route("/get-osm-query", methods=["POST"])
-def get_osm_query_route():
+def get_spot_query_route():
     data = request.json
     db = get_db()
     cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
     try:
-        validate(data, schema)
-        validate_osm_query(data)
+        validate_json_schema(data, schema)
+        validate_spot_query(data)
     except (exceptions.ValidationError, ValueError) as e:
         print(e)
         return jsonify({"error": str(e)}), 400
 
     try:
-        data = clean_osm_query(data)
-        set_area(data)
-        query = constructor.construct_query_from_graph(data)
+        cleaned_spot_query = clean_spot_query(data)
+        set_area(cleaned_spot_query)
+        query = constructor.construct_query_from_graph(cleaned_spot_query)
+
         return query.as_string(cursor)
 
     except AreaInvalidError as e:
@@ -94,6 +96,7 @@ def get_osm_query_route():
             "errorType": "areaInvalid",
             "message": str(e),
         }
+
         return jsonify(response), 422
 
     except ValueError as e:
@@ -102,6 +105,7 @@ def get_osm_query_route():
             "errorType": "valueError",
             "message": str(e),
         }
+
         return jsonify(response), 400
 
     except (InterfaceError, ProgrammingError, DatabaseError, OperationalError) as e:
@@ -109,33 +113,35 @@ def get_osm_query_route():
             "status": "error",
             "errorType": str(e),
         }
+
         return jsonify(response), 500
 
 
 @app.route("/run-osm-query", methods=["POST"])
-def run_osm_query_route():
+def run_spot_query_route():
     timer = Timer()
     data = request.json
     db = get_db()
 
     try:
-        validate(data, schema)
-        validate_osm_query(data)
+        validate_json_schema(data, schema)
+        validate_spot_query(data)
+
     except (exceptions.ValidationError, ValueError) as e:
         return (
             jsonify(
-                {"status": "error", "errorType": "osm_queryInvalid", "message": str(e)}
+                {"status": "error", "errorType": "spot_queryInvalid", "message": str(e)}
             ),
             400,
         )
 
     try:
-        data = clean_osm_query(data)
-        set_area(data)
+        cleaned_spot_query = clean_spot_query(data)
+        set_area(cleaned_spot_query)
         timer.add_checkpoint("area_setting")
         check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
 
-        query = constructor.construct_query_from_graph(data)
+        query = constructor.construct_query_from_graph(cleaned_spot_query)
 
         timer.add_checkpoint("query_construction")
 
@@ -180,6 +186,7 @@ def run_osm_query_route():
             "message": str(e),
             "timing": timer.get_all_checkpoints(),
         }
+
         return jsonify(response), 422
 
     except QueryCanceledError:
@@ -189,6 +196,7 @@ def run_osm_query_route():
             "errorType": "queryTimeout",
             "timing": timer.get_all_checkpoints(),
         }
+
         return jsonify(response), 408
 
     except ValueError as e:
@@ -199,6 +207,7 @@ def run_osm_query_route():
             "message": str(e),
             "timing": timer.get_all_checkpoints(),
         }
+
         return jsonify(response), 400
 
     except (InterfaceError, ProgrammingError, DatabaseError, OperationalError) as e:
@@ -208,6 +217,7 @@ def run_osm_query_route():
             "errorType": str(e),
             "timing": timer.get_all_checkpoints(),
         }
+
         return jsonify(response), 500
 
 
