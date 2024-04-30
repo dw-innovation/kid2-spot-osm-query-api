@@ -290,8 +290,8 @@ def get_spots(results):
     return spots
 
 
-def validate_imr(imr):
-    edges, nodes = imr.get("edges"), imr.get("nodes")
+def validate_osm_query(osm_query):
+    edges, nodes = osm_query.get("edges"), osm_query.get("nodes")
 
     for node in nodes:
         filters = node.get("filters")
@@ -349,12 +349,12 @@ def validate_has_filter(filter_nodes):
     return False
 
 
-def clean_imr(imr):
-    nodes, edges = imr.get("nodes", []), imr.get("edges", [])
+def clean_osm_query(osm_query):
+    nodes, edges = osm_query.get("nodes", []), osm_query.get("edges", [])
 
     # Sort nodes by 'id'
     sorted_nodes = sorted(nodes, key=lambda x: x["id"])
-    imr["nodes"] = sorted_nodes
+    osm_query["nodes"] = sorted_nodes
 
     # Invert 'source' and 'target' where 'target' is not greater than 'source' and sort edges
     for edge in edges:
@@ -363,6 +363,6 @@ def clean_imr(imr):
             edge["source"], edge["target"] = target, source
 
     sorted_edges = sorted(edges, key=lambda x: (x["source"], x["target"]))
-    imr["edges"] = sorted_edges
+    osm_query["edges"] = sorted_edges
 
-    return imr
+    return osm_query

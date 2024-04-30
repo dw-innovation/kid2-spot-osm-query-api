@@ -1,4 +1,3 @@
-from flask import g
 from psycopg2 import sql
 
 
@@ -6,11 +5,7 @@ class AreaInvalidError(Exception):
     pass
 
 
-def construct_search_area_CTE():
-    # Get the geometry and type from Flask's global object
-    geom = g.area["value"]
-    type = g.area["type"]
-
+def construct_search_area_CTE(type, value, utm):
     # Handle bounding box type
     try:
         if type == "bbox":
@@ -18,32 +13,32 @@ def construct_search_area_CTE():
                 "ST_MakeEnvelope({xmin}, {ymin}, {xmax}, {ymax}, {utm})"
             ).format(
                 utm=sql.Literal(g.utm),
-                xmin=sql.Literal(geom[0]),
-                ymin=sql.Literal(geom[1]),
-                xmax=sql.Literal(geom[2]),
-                ymax=sql.Literal(geom[3]),
+                xmin=sql.Literal(value[0]),
+                ymin=sql.Literal(value[1]),
+                xmax=sql.Literal(value[2]),
+                ymax=sql.Literal(value[3]),
             )
 
         # Handle polygon type
         elif type == "polygon":
             # Make sure the polygon is closed by appending the first point at the end if needed
-            if geom[0] != geom[-1]:
-                geom.append(geom[0])
+            if value[0] != value[-1]:
+                value.append(value[0])
 
             # Convert list of coordinates to a string
             polygon_coordinates = ", ".join(
-                [f"{coord[0]} {coord[1]}" for coord in geom]
+                [f"{coord[0]} {coord[1]}" for coord in value]
             )
 
             # Use ST_GeomFromText to create the geometry
             geometry = sql.SQL("ST_GeomFromText('POLYGON(({polygon}))', {utm})").format(
-                utm=sql.Literal(g.utm), polygon=sql.Literal(polygon_coordinates)
+                utm=sql.Literal(utm), polygon=sql.Literal(polygon_coordinates)
             )
 
         # Handle geojson area type
         elif type == "area":
-            geometry = sql.SQL("ST_GeomFromGeoJSON({geom})").format(
-                geom=sql.Literal(geom)
+            geometry = sql.SQL("ST_GeomFromGeoJSON({value})").format(
+                value=sql.Literal(value)
             )
 
         # Construct the CTE (Common Table Expression) using the generated geometry
