@@ -125,7 +125,7 @@
             "properties": {
               "source": { "type": "number" },
               "target": { "type": "number" },
-              "type": { "type": "string", "const": "cnt" }
+              "type": { "type": "string", "const": "contains" }
             },
             "required": ["source", "target", "type"]
           }

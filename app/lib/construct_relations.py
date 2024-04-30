@@ -53,7 +53,7 @@ def construct_relations(imr):
             )
 
         # Process 'contains' type
-        elif type == "cnt":
+        elif type == "contains":
             # Formulate SQL join condition for containment
             condition = sql.SQL(
                 "ST_Contains({source_alias}.transformed_geom, {target_alias}.transformed_geom)"
