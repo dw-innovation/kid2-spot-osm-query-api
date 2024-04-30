@@ -14,8 +14,8 @@ from lib.utils import (
     set_area,
     results_to_geojson,
     check_area_surface,
-    validate_imr,
-    clean_imr,
+    validate_osm_query,
+    clean_osm_query,
 )
 from lib.database import initialize_connection_pool, get_db, close_db
 import lib.constructor as constructor
@@ -52,17 +52,19 @@ def teardown(e=None):
     close_db(e)
 
 
-@app.route("/validate-imr", methods=["POST"])
-def validate_imr_route():
+@app.route("/validate-osm-query", methods=["POST"])
+def validate_osm_query_route():
     data = request.json
 
     try:
         validate(data, schema)
-        validate_imr(data)
+        validate_osm_query(data)
         return jsonify({"status": "success"}), 200
     except (exceptions.ValidationError, ValueError) as e:
         return (
-            jsonify({"status": "error", "errorType": "imrInvalid", "message": str(e)}),
+            jsonify(
+                {"status": "error", "errorType": "osm_queryInvalid", "message": str(e)}
+            ),
             400,
         )
 
@@ -75,13 +77,13 @@ def get_osm_query_route():
 
     try:
         validate(data, schema)
-        validate_imr(data)
+        validate_osm_query(data)
     except (exceptions.ValidationError, ValueError) as e:
         print(e)
         return jsonify({"error": str(e)}), 400
 
     try:
-        data = clean_imr(data)
+        data = clean_osm_query(data)
         set_area(data)
         query = constructor.construct_query_from_graph(data)
         return query.as_string(cursor)
@@ -118,15 +120,17 @@ def run_osm_query_route():
 
     try:
         validate(data, schema)
-        validate_imr(data)
+        validate_osm_query(data)
     except (exceptions.ValidationError, ValueError) as e:
         return (
-            jsonify({"status": "error", "errorType": "imrInvalid", "message": str(e)}),
+            jsonify(
+                {"status": "error", "errorType": "osm_queryInvalid", "message": str(e)}
+            ),
             400,
         )
 
     try:
-        data = clean_imr(data)
+        data = clean_osm_query(data)
         set_area(data)
         timer.add_checkpoint("area_setting")
         check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
