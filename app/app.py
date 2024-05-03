@@ -6,7 +6,7 @@ from jsonschema import validate as validate_json_schema, exceptions
 import psycopg2
 from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
 from psycopg2.extensions import QueryCanceledError
-from lib.ctes.construct_search_area_CTE import (
+from lib.ctes.construct_search_area_cte import (
     AreaInvalidError,
 )
 from lib.utils import (

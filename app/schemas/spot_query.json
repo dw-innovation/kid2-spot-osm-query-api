@@ -68,7 +68,7 @@
     "area": {
       "type": "object",
       "properties": {
-        "type": { "type": "string", "enum": ["bbox", "polygon", "area"] },
+        "type": { "type": "string", "enum": ["bbox", "area"] },
         "value": {
           "oneOf": [
             {

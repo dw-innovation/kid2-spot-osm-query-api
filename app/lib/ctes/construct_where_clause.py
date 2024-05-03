@@ -1,7 +1,7 @@
 from psycopg2 import sql
 
 
-def construct_CTE_where_clause(filters, area=None):
+def construct_cte_where_clause(filters, area=None):
     if not filters:
         return ""
 

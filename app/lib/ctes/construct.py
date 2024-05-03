@@ -1,9 +1,9 @@
-from .construct_search_area_CTE import construct_search_area_CTE
-from .construct_NWR_CTE import construct_NWR_CTE
-from .construct_cluster_CTE import construct_cluster_CTE
+from .construct_search_area_cte import construct_search_area_cte
+from .construct_NWR_cte import construct_NWR_cte
+from .construct_cluster_cte import construct_cluster_cte
 
 
-def construct_ctes(spot_query, utm):
+def construct_ctes(spot_query):
     # Initialize an empty list to hold the CTEs
     ctes = []
 
@@ -12,13 +12,13 @@ def construct_ctes(spot_query, utm):
     area = spot_query["area"]
 
     # Construct envelope CTE
-    envelope_cte = construct_search_area_CTE(area.get("type"), area.get("value"), utm)
+    envelope_cte = construct_search_area_cte(area.get("type"), area.get("value"))
 
     ctes.append(envelope_cte)
 
     # Iterate over the nodes to construct each CTE
     for i in range(len(nodes)):
-        cte = constructCTE(nodes[i], area)
+        cte = construct_cte(nodes[i], area)
 
         # Append the CTE to the list
         ctes.append(cte)
@@ -26,13 +26,13 @@ def construct_ctes(spot_query, utm):
     return ctes
 
 
-def constructCTE(node, area):
+def construct_cte(node, area):
     # Get the type of the node
     type = node["type"]
 
     # Depending on the type of the node, construct the appropriate type of CTE
     if type == "cluster":
-        return construct_cluster_CTE(node, area)
+        return construct_cluster_cte(node, area)
 
     elif type == "nwr":
-        return construct_NWR_CTE(node, area)
+        return construct_NWR_cte(node, area)

@@ -1,11 +1,11 @@
 import os
 from flask import g
 from ..utils import distance_to_meters
-from .construct_where_clause import construct_CTE_where_clause
+from .construct_where_clause import construct_cte_where_clause
 from psycopg2 import sql
 
 
-def construct_cluster_CTE(node, area):
+def construct_cluster_cte(node, area):
     try:
         eps = node.get("maxDistance", "50")
         eps_in_meters = distance_to_meters(eps)
@@ -13,7 +13,7 @@ def construct_cluster_CTE(node, area):
         set_id = node.get("id", "id")
         set_name = node.get("name", "name")
         cluster_name = f"cluster_{set_id}_{set_name}".replace(" ", "_")
-        filters = construct_CTE_where_clause(node.get("filters", []), area)
+        filters = construct_cte_where_clause(node.get("filters", []), area)
 
         query = sql.SQL(
             """WITH clusters AS (

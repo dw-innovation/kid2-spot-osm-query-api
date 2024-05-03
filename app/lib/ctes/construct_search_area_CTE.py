@@ -1,11 +1,12 @@
 from psycopg2 import sql
+from flask import g
 
 
 class AreaInvalidError(Exception):
     pass
 
 
-def construct_search_area_CTE(type, value, utm):
+def construct_search_area_cte(type, value):
     # Handle bounding box type
     try:
         if type == "bbox":
@@ -17,22 +18,6 @@ def construct_search_area_CTE(type, value, utm):
                 ymin=sql.Literal(value[1]),
                 xmax=sql.Literal(value[2]),
                 ymax=sql.Literal(value[3]),
-            )
-
-        # Handle polygon type
-        elif type == "polygon":
-            # Make sure the polygon is closed by appending the first point at the end if needed
-            if value[0] != value[-1]:
-                value.append(value[0])
-
-            # Convert list of coordinates to a string
-            polygon_coordinates = ", ".join(
-                [f"{coord[0]} {coord[1]}" for coord in value]
-            )
-
-            # Use ST_GeomFromText to create the geometry
-            geometry = sql.SQL("ST_GeomFromText('POLYGON(({polygon}))', {utm})").format(
-                utm=sql.Literal(utm), polygon=sql.Literal(polygon_coordinates)
             )
 
         # Handle geojson area type

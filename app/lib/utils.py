@@ -19,7 +19,7 @@ from collections import defaultdict
 import os
 
 
-from lib.ctes.construct_search_area_CTE import AreaInvalidError
+from lib.ctes.construct_search_area_cte import AreaInvalidError
 
 
 def geom_bin_to_geojson(geom_bin):
@@ -74,9 +74,11 @@ def results_to_geojson(results):
     return geojson
 
 
-def distance_to_meters(distance_str):
+def distance_to_meters(distance_str: str) -> str:
     """
     Convert distance with unit to meters.
+    :param distance_str: str
+    :return: str, converted distance in meters
     """
 
     # Conversion rates for different units
@@ -132,13 +134,14 @@ def distance_to_meters(distance_str):
     return distance_meters
 
 
-def get_utm(latitude, longitude):
+def get_utm(longitude: float, latitude: float) -> int:
     """
     Determine UTM zone EPSG for a given latitude and longitude.
     :param latitude: float
     :param longitude: float
     :return: int, UTM EPSG
     """
+
     if -180 <= longitude <= 180:
         zone_number = int((longitude + 180) / 6) + 1
         if -80 <= latitude < 0:
@@ -153,7 +156,7 @@ def get_utm(latitude, longitude):
         raise ValueError("Longitude out of range.")
 
 
-def set_area(data):
+def set_area(data: str) -> None:
     try:
         type = data["area"]["type"]
 
@@ -163,15 +166,11 @@ def set_area(data):
         if type == "bbox":
             g.area["type"] = "bbox"
             g.area["value"] = data["area"]["value"]
-            minx, miny, maxx, maxy = data["area"]["value"]
-            center_x = (minx + maxx) / 2
-            center_y = (miny + maxy) / 2
-            g.area["center"] = [center_x, center_y]
-            g.utm = get_utm(center_y, center_x)
-
-        elif type == "polygon":
-            g.area["type"] = "polygon"
-            g.area["value"] = data["area"]["value"]
+            min_lon, min_lat, max_lon, max_lat = data["area"]["value"]
+            center_lon = (min_lon + max_lon) / 2
+            center_lat = (min_lat + max_lat) / 2
+            g.area["center"] = [center_lon, center_lat]
+            g.utm = get_utm(center_lon, center_lat)
 
         elif type == "area":
             g.area["type"] = "area"
@@ -191,46 +190,44 @@ def set_area(data):
                         float(nominatim_data[0]["lat"]),
                         float(nominatim_data[0]["lon"]),
                     ]
-                    g.utm = get_utm(g.area["center"][0], g.area["center"][1])
+                    g.utm = get_utm(g.area["center"][1], g.area["center"][0])
     except Exception as e:
         print(f"An error occurred in area.py: {e}")
         raise AreaInvalidError(e)
 
 
-def check_area_surface(db, geom, geom_type, utm):
-    cursor = db.cursor()
+def check_area_surface(db, geometry, geometry_type, utm):
+    area = calculate_area_size(db, geometry, geometry_type, utm)
 
-    if geom_type == "bbox":
-        query = sql.SQL(
-            "SELECT ST_Area(ST_Transform(ST_MakeEnvelope({}, {}, {}, {}, 4326), {}))"
-        ).format(
-            sql.Literal(geom[0]),
-            sql.Literal(geom[1]),
-            sql.Literal(geom[2]),
-            sql.Literal(geom[3]),
-            sql.Literal(utm),
-        )
-
-    elif geom_type == "polygon":
-        polygon_coordinates = ", ".join([f"{coord[0]} {coord[1]}" for coord in geom])
-        query = sql.SQL(
-            "SELECT ST_Area(ST_Transform(ST_GeomFromText('POLYGON(({}))', 4326), {}))"
-        ).format(sql.Literal(polygon_coordinates), sql.Literal(utm), sql.Literal(utm))
-
-    elif geom_type == "area":
-        query = sql.SQL(
-            "SELECT ST_Area(ST_Transform(ST_GeomFromGeoJSON({}), {}))"
-        ).format(sql.Literal(geom), sql.Literal(utm))
-
-    cursor.execute(query)
-    area = cursor.fetchone()[0]
-
-    area = area / 1e6
+    area_sqkm = area / 1e6
 
     max_area = int(os.getenv("MAX_AREA", 5000))
 
-    if area > max_area:
+    if area_sqkm > max_area:
         raise AreaInvalidError("areaExceedsLimit")
+
+
+def calculate_area_size(db, geometry, geometry_type: str, utm: int) -> float:
+    cursor = db.cursor()
+
+    if geometry_type == "bbox":
+        query = sql.SQL(
+            "SELECT ST_Area(ST_Transform(ST_MakeEnvelope({}, {}, {}, {}, 4326), {}))"
+        ).format(
+            sql.Literal(geometry[0]),
+            sql.Literal(geometry[1]),
+            sql.Literal(geometry[2]),
+            sql.Literal(geometry[3]),
+            sql.Literal(utm),
+        )
+    elif geometry_type == "area":
+        query = sql.SQL(
+            "SELECT ST_Area(ST_Transform(ST_GeomFromGeoJSON({}), {}))"
+        ).format(sql.Literal(geometry), sql.Literal(utm))
+
+    cursor.execute(query)
+
+    return cursor.fetchone()[0]
 
 
 def get_spots(results):
