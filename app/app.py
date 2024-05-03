@@ -52,7 +52,7 @@ def teardown(e=None):
     close_db(e)
 
 
-@app.route("/validate-osm-query", methods=["POST"])
+@app.route("/validate-spot-query", methods=["POST"])
 def validate_spot_query_route():
     data = request.json
 
@@ -70,7 +70,7 @@ def validate_spot_query_route():
         )
 
 
-@app.route("/get-osm-query", methods=["POST"])
+@app.route("/get-pg-query", methods=["POST"])
 def get_spot_query_route():
     data = request.json
     db = get_db()
@@ -117,7 +117,7 @@ def get_spot_query_route():
         return jsonify(response), 500
 
 
-@app.route("/run-osm-query", methods=["POST"])
+@app.route("/run-spot-query", methods=["POST"])
 def run_spot_query_route():
     timer = Timer()
     data = request.json

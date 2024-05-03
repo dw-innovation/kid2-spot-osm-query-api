@@ -132,7 +132,7 @@ def distance_to_meters(distance_str):
     return distance_meters
 
 
-def determine_utm_epsg(latitude, longitude):
+def get_utm(latitude, longitude):
     """
     Determine UTM zone EPSG for a given latitude and longitude.
     :param latitude: float
@@ -167,7 +167,7 @@ def set_area(data):
             center_x = (minx + maxx) / 2
             center_y = (miny + maxy) / 2
             g.area["center"] = [center_x, center_y]
-            g.utm = determine_utm_epsg(center_y, center_x)
+            g.utm = get_utm(center_y, center_x)
 
         elif type == "polygon":
             g.area["type"] = "polygon"
@@ -191,7 +191,7 @@ def set_area(data):
                         float(nominatim_data[0]["lat"]),
                         float(nominatim_data[0]["lon"]),
                     ]
-                    g.utm = determine_utm_epsg(g.area["center"][0], g.area["center"][1])
+                    g.utm = get_utm(g.area["center"][0], g.area["center"][1])
     except Exception as e:
         print(f"An error occurred in area.py: {e}")
         raise AreaInvalidError(e)
@@ -290,8 +290,8 @@ def get_spots(results):
     return spots
 
 
-def validate_osm_query(osm_query):
-    edges, nodes = osm_query.get("edges"), osm_query.get("nodes")
+def validate_spot_query(spot_query):
+    edges, nodes = spot_query.get("edges"), spot_query.get("nodes")
 
     for node in nodes:
         filters = node.get("filters")
@@ -349,12 +349,12 @@ def validate_has_filter(filter_nodes):
     return False
 
 
-def clean_osm_query(osm_query):
-    nodes, edges = osm_query.get("nodes", []), osm_query.get("edges", [])
+def clean_spot_query(spot_query):
+    nodes, edges = spot_query.get("nodes", []), spot_query.get("edges", [])
 
     # Sort nodes by 'id'
     sorted_nodes = sorted(nodes, key=lambda x: x["id"])
-    osm_query["nodes"] = sorted_nodes
+    spot_query["nodes"] = sorted_nodes
 
     # Invert 'source' and 'target' where 'target' is not greater than 'source' and sort edges
     for edge in edges:
@@ -363,6 +363,6 @@ def clean_osm_query(osm_query):
             edge["source"], edge["target"] = target, source
 
     sorted_edges = sorted(edges, key=lambda x: (x["source"], x["target"]))
-    osm_query["edges"] = sorted_edges
+    spot_query["edges"] = sorted_edges
 
-    return osm_query
+    return spot_query

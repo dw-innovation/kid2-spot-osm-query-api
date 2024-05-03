@@ -1,13 +1,13 @@
 from .ctes.construct import construct_ctes
 from .construct_relations import construct_relations
 from psycopg2 import sql
+from flask import g
 
 
 def construct_query_from_graph(spot_query):
     try:
-        utm = get_utm()
         # Construct the node CTEs based on the intermediate representation
-        ctes = construct_ctes(spot_query, utm)
+        ctes = construct_ctes(spot_query, g.utm)
 
         # Combine the node constructed CTEs with the SQL WITH clause
         combined_ctes = sql.SQL("WITH ") + sql.SQL(", ").join(ctes)
