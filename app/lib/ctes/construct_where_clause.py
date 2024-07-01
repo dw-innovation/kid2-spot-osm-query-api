@@ -1,7 +1,7 @@
 from psycopg2 import sql
 
 
-def construct_cte_where_clause(filters, area=None):
+def construct_cte_where_clause(filters):
     if not filters:
         return ""
 
@@ -25,9 +25,9 @@ def construct_filter(filter):
             sql.SQL(" OR ").join([construct_filter(f) for f in filter["or"]])
         )
 
-    key = filter.get("key", None)
-    value = filter.get("value", None)
-    operator = filter.get("operator", None)
+    key = filter.get("key", "key")
+    operator = filter.get("operator", "operator")
+    value = filter.get("value", "value")
 
     try:
         if operator in [">", "<"]:
