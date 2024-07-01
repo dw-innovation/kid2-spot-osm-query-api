@@ -19,7 +19,7 @@ from collections import defaultdict
 import os
 
 
-from lib.ctes.construct_search_area_cte import AreaInvalidError
+from .ctes.construct_search_area import AreaInvalidError
 
 
 def geom_bin_to_geojson(geom_bin):
