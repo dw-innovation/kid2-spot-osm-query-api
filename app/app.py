@@ -23,7 +23,8 @@ from collections import Counter
 from lib.timer import Timer
 from flask_compress import Compress
 from dotenv import load_dotenv
-import os
+import jwt
+from jwt import InvalidTokenError
 
 load_dotenv()
 
@@ -34,7 +35,8 @@ def check_env_vars():
         "DATABASE_PASSWORD",
         "DATABASE_HOST",
         "DATABASE_PORT",
-        "TABLE_VIEW"
+        "TABLE_VIEW",
+        "JWT_SECRET"
     ]
     missing_vars = [var for var in required_vars if os.getenv(var) is None]
     if missing_vars:
@@ -57,19 +59,38 @@ DATABASE = {
     "port": os.getenv("DATABASE_PORT"),
 }
 
+JWT_SECRET = os.getenv("JWT_SECRET")
+
 with open("./schemas/spot_query.json", "r") as file:
     schema = json.load(file)
-
 
 @app.before_first_request
 def setup():
     initialize_connection_pool(DATABASE)
 
-
 @app.teardown_appcontext
 def teardown(e=None):
     close_db(e)
 
+def validate_jwt(token):
+    try:
+        payload = jwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+        return payload
+    except InvalidTokenError as e:
+        raise ValueError(f"Invalid token: {str(e)}")
+
+@app.before_request
+def check_jwt():
+    if request.endpoint not in ['static']:
+        auth_header = request.headers.get("Authorization")
+        if auth_header is None or not auth_header.startswith("Bearer "):
+            return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
+        
+        token = auth_header.split(" ")[1]
+        try:
+            validate_jwt(token)
+        except ValueError as e:
+            return jsonify({"status": "error", "message": str(e)}), 401
 
 @app.route("/validate-spot-query", methods=["POST"])
 def validate_spot_query_route():
@@ -87,7 +108,6 @@ def validate_spot_query_route():
             ),
             400,
         )
-
 
 @app.route("/get-pg-query", methods=["POST"])
 def get_spot_query_route():
@@ -134,7 +154,6 @@ def get_spot_query_route():
         }
 
         return jsonify(response), 500
-
 
 @app.route("/run-spot-query", methods=["POST"])
 def run_spot_query_route():
@@ -238,7 +257,6 @@ def run_spot_query_route():
         }
 
         return jsonify(response), 500
-
 
 if __name__ == "__main__":
     app.run(debug=True)
