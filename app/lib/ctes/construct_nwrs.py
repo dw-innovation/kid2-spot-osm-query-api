@@ -4,10 +4,10 @@ from flask import g
 from .construct_where_clause import construct_cte_where_clause
 
 
-def construct_NWR_cte(node, area):
-    set_id = node.get("id", "id")
+def construct_nwr_cte(node):
+    set_id = node.get("id", 0)
     set_name = node.get("name", "name")
-    filters = construct_cte_where_clause(node.get("filters", []), area)
+    filters = construct_cte_where_clause(node.get("filters", []))
 
     query = sql.SQL(
         """
@@ -30,12 +30,12 @@ def construct_NWR_cte(node, area):
         utm=sql.Literal(g.utm),
         set_name=sql.Literal(set_name),
         table_view=sql.Identifier(os.getenv("TABLE_VIEW")),
-        filters=filters,
+        filters=filters
     )
 
     cte = sql.SQL("{set_id} AS ({query})").format(
         set_id=sql.Identifier(str(set_id)),
-        query=query,
+        query=query
     )
 
     return cte
