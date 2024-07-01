@@ -8,3 +8,4 @@ flask_compress==1.14
 gunicorn==21.2.0
 Werkzeug==2.3.7
 python-dotenv==1.0.1
+pyjwt==2.8.0
