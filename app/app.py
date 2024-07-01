@@ -6,7 +6,7 @@ from jsonschema import validate as validate_json_schema, exceptions
 import psycopg2
 from psycopg2 import DatabaseError, ProgrammingError, InterfaceError, OperationalError
 from psycopg2.extensions import QueryCanceledError
-from lib.ctes.construct_search_area_cte import (
+from lib.ctes.construct_search_area import (
     AreaInvalidError,
 )
 from lib.utils import (
@@ -22,6 +22,25 @@ import lib.constructor as constructor
 from collections import Counter
 from lib.timer import Timer
 from flask_compress import Compress
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+def check_env_vars():
+    required_vars = [
+        "DATABASE_NAME",
+        "DATABASE_USER",
+        "DATABASE_PASSWORD",
+        "DATABASE_HOST",
+        "DATABASE_PORT",
+        "TABLE_VIEW"
+    ]
+    missing_vars = [var for var in required_vars if os.getenv(var) is None]
+    if missing_vars:
+        raise EnvironmentError(f"Missing required environment variables: {', '.join(missing_vars)}")
+
+check_env_vars()
 
 environment = os.getenv("ENVIRONMENT") or "production"
 
