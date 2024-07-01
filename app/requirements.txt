@@ -7,3 +7,4 @@ Shapely==2.0.1
 flask_compress==1.14
 gunicorn==21.2.0
 Werkzeug==2.3.7
+python-dotenv==1.0.1
