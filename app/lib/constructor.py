@@ -7,7 +7,7 @@ from flask import g
 def construct_query_from_graph(spot_query):
     try:
         # Construct the node CTEs based on the intermediate representation
-        ctes = construct_ctes(spot_query, g.utm)
+        ctes = construct_ctes(spot_query)
 
         # Combine the node constructed CTEs with the SQL WITH clause
         combined_ctes = sql.SQL("WITH ") + sql.SQL(", ").join(ctes)
