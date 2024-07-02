@@ -36,7 +36,8 @@ def check_env_vars():
         "DATABASE_HOST",
         "DATABASE_PORT",
         "TABLE_VIEW",
-        "JWT_SECRET"
+        "JWT_SECRET",
+        "TIMEOUT"
     ]
     missing_vars = [var for var in required_vars if os.getenv(var) is None]
     if missing_vars:
@@ -185,7 +186,8 @@ def run_spot_query_route():
         timer.add_checkpoint("query_construction")
 
         cursor = db.cursor(cursor_factory=psycopg2.extras.DictCursor)
-        cursor.execute("SET statement_timeout = 20000")
+        timeout = int(os.getenv("TIMEOUT", 20000))
+        cursor.execute("SET statement_timeout = %s", (timeout,))
         db.commit()
         cursor.execute(query)
         timer.add_checkpoint("query_execution")
