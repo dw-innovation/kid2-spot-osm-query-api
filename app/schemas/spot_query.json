@@ -116,9 +116,9 @@
               "source": { "type": "number" },
               "target": { "type": "number" },
               "type": { "type": "string", "const": "dist" },
-              "distance": { "type": "string" }
+              "value": { "type": "string" }
             },
-            "required": ["source", "target", "type", "distance"]
+            "required": ["source", "target", "type", "value"]
           },
           {
             "type": "object",

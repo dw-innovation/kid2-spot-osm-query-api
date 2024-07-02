@@ -40,7 +40,7 @@ def construct_relations(spot_query):
         # Process 'distance' type
         if type == "dist":
             distance = distance_to_meters(
-                edge["distance"]
+                edge["value"]
             )  # Convert distance to meters
 
             # Formulate SQL join condition for distance
