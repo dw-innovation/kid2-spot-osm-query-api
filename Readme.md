@@ -28,6 +28,8 @@ Ensure you've initiated and are running the Spot Postgres instance. This can be 
     osmapi
     ```
 
+    Authentication is disabled by default. If you want to enable it, pass on the environment variable `AUTH_ENABLED` and set it to `true`.
+
 ## API Endpoints
 
 ### POST `/run-osm-query`

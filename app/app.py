@@ -60,6 +60,7 @@ DATABASE = {
 }
 
 JWT_SECRET = os.getenv("JWT_SECRET")
+AUTH_ENABLED = os.getenv("AUTH_ENABLED", "false").lower() in ["true", "1", "yes"]
 
 with open("./schemas/spot_query.json", "r") as file:
     schema = json.load(file)
@@ -81,7 +82,7 @@ def validate_jwt(token):
 
 @app.before_request
 def check_jwt():
-    if request.endpoint not in ['static']:
+    if AUTH_ENABLED and request.endpoint not in ['static']:
         auth_header = request.headers.get("Authorization")
         if auth_header is None or not auth_header.startswith("Bearer "):
             return jsonify({"status": "error", "message": "Missing or invalid token"}), 401
