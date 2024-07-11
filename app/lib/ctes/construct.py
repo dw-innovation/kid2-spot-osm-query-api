@@ -1,3 +1,4 @@
+from flask import g
 from .construct_search_area import construct_search_area_cte
 from .construct_nwrs import construct_nwr_cte
 from .construct_cluster import construct_cluster_cte
@@ -7,12 +8,11 @@ def construct_ctes(spot_query):
     # Initialize an empty list to hold the CTEs
     ctes = []
 
-    # Extract nodes and area from the intermediate representation
+    # Extract nodes from the SPOT query
     nodes = spot_query["nodes"]
-    area = spot_query["area"]
 
     # Construct envelope CTE
-    envelope_cte = construct_search_area_cte(area.get("type"), area.get("value"))
+    envelope_cte = construct_search_area_cte(g.area["type"])
 
     ctes.append(envelope_cte)
     

@@ -179,7 +179,7 @@ def run_spot_query_route():
         cleaned_spot_query = clean_spot_query(data)
         set_area(cleaned_spot_query)
         timer.add_checkpoint("area_setting")
-        check_area_surface(g.db, g.area["value"], g.area["type"], g.utm)
+        check_area_surface(g.db)
 
         query = constructor.construct_query_from_graph(cleaned_spot_query)
 

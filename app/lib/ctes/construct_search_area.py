@@ -1,3 +1,4 @@
+import json
 from psycopg2 import sql
 from flask import g
 
@@ -6,7 +7,7 @@ class AreaInvalidError(Exception):
     pass
 
 
-def construct_search_area_cte(type, value):
+def construct_search_area_cte(type):
     # Handle bounding box type
     try:
         if type == "bbox":
@@ -14,16 +15,16 @@ def construct_search_area_cte(type, value):
                 "ST_MakeEnvelope({xmin}, {ymin}, {xmax}, {ymax}, {utm})"
             ).format(
                 utm=sql.Literal(g.utm),
-                xmin=sql.Literal(value[0]),
-                ymin=sql.Literal(value[1]),
-                xmax=sql.Literal(value[2]),
-                ymax=sql.Literal(value[3]),
+                xmin=sql.Literal(g.area["bbox"][0]),
+                ymin=sql.Literal(g.area["bbox"][1]),
+                xmax=sql.Literal(g.area["bbox"][2]),
+                ymax=sql.Literal(g.area["bbox"][3]),
             )
 
         # Handle geojson area type
         elif type == "area":
-            geometry = sql.SQL("ST_GeomFromGeoJSON({value})").format(
-                value=sql.Literal(value)
+            geometry = sql.SQL("ST_GeomFromGeoJSON({searchAreaGeometry})").format(
+                searchAreaGeometry=sql.Literal(g.area["geometry"])
             )
 
         # Construct the CTE (Common Table Expression) using the generated geometry

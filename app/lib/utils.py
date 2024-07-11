@@ -165,8 +165,8 @@ def set_area(data: str) -> None:
 
         if type == "bbox":
             g.area["type"] = "bbox"
-            g.area["value"] = data["area"]["value"]
-            min_lon, min_lat, max_lon, max_lat = data["area"]["value"]
+            g.area["bbox"] = data["area"]["bbox"]
+            min_lon, min_lat, max_lon, max_lat = data["area"]["bbox"]
             center_lon = (min_lon + max_lon) / 2
             center_lat = (min_lat + max_lat) / 2
             g.area["center"] = [center_lon, center_lat]
@@ -174,30 +174,21 @@ def set_area(data: str) -> None:
 
         elif type == "area":
             g.area["type"] = "area"
-            area_name = data["area"]["value"]
+            geometry = data["area"]["geometry"]
+            g.area["geometry"] = json.dumps(geometry).replace("\\\"", "\"")
 
-            # Get area name from OSM Nominatim
-            url = f"https://nominatim.openstreetmap.org/search?q={area_name}&format=json&polygon_geojson=1&limit=1"
-            response = requests.get(url)
-
-            if response.status_code == 200:
-                nominatim_data = json.loads(response.text)
-
-                if len(nominatim_data) > 0 and "geojson" in nominatim_data[0]:
-                    geojson = json.dumps(nominatim_data[0]["geojson"])
-                    g.area["value"] = geojson
-                    g.area["center"] = [
-                        float(nominatim_data[0]["lat"]),
-                        float(nominatim_data[0]["lon"]),
-                    ]
-                    g.utm = get_utm(g.area["center"][1], g.area["center"][0])
+            polygon = shape(geometry)
+            centroid = polygon.centroid
+            g.area["center"] = [centroid.x, centroid.y]
+            g.utm = get_utm(centroid.x, centroid.y)
     except Exception as e:
         print(f"An error occurred in area.py: {e}")
         raise AreaInvalidError(e)
 
 
-def check_area_surface(db, geometry, geometry_type, utm):
-    area = calculate_area_size(db, geometry, geometry_type, utm)
+def check_area_surface(db):
+
+    area = calculate_area_size(db)
 
     area_sqkm = area / 1e6
 
@@ -207,23 +198,24 @@ def check_area_surface(db, geometry, geometry_type, utm):
         raise AreaInvalidError("areaExceedsLimit")
 
 
-def calculate_area_size(db, geometry, geometry_type: str, utm: int) -> float:
+def calculate_area_size(db) -> float:
     cursor = db.cursor()
 
-    if geometry_type == "bbox":
+    if g.area["type"] == "bbox":
+        bbox = g.area["bbox"]
         query = sql.SQL(
             "SELECT ST_Area(ST_Transform(ST_MakeEnvelope({}, {}, {}, {}, 4326), {}))"
         ).format(
-            sql.Literal(geometry[0]),
-            sql.Literal(geometry[1]),
-            sql.Literal(geometry[2]),
-            sql.Literal(geometry[3]),
-            sql.Literal(utm),
+            sql.Literal(bbox[0]),
+            sql.Literal(bbox[1]),
+            sql.Literal(bbox[2]),
+            sql.Literal(bbox[3]),
+            sql.Literal(g.utm),
         )
-    elif geometry_type == "area":
+    elif g.area["type"] == "area":
         query = sql.SQL(
             "SELECT ST_Area(ST_Transform(ST_GeomFromGeoJSON({}), {}))"
-        ).format(sql.Literal(geometry), sql.Literal(utm))
+        ).format(sql.Literal(g.area["geometry"]), sql.Literal(g.utm))
 
     cursor.execute(query)
 
