@@ -1,4 +1,3 @@
-import json
 from psycopg2 import sql
 from flask import g
 
@@ -23,8 +22,8 @@ def construct_search_area_cte(type):
 
         # Handle geojson area type
         elif type == "area":
-            geometry = sql.SQL("ST_GeomFromGeoJSON({searchAreaGeometry})").format(
-                searchAreaGeometry=sql.Literal(g.area["geometry"])
+            geometry = sql.SQL("ST_SIMPLIFY(ST_GeomFromGeoJSON({searchAreaGeometry}), 0.001)").format(
+                searchAreaGeometry=sql.Literal(g.area["geometry"]),
             )
 
         # Construct the CTE (Common Table Expression) using the generated geometry
