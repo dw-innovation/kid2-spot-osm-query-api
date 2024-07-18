@@ -13,4 +13,4 @@ RUN pip3 install --no-cache-dir -r requirements.txt
 
 EXPOSE 5000
 
-CMD ["gunicorn", "-w", "4", "-b", ":5000", "--timeout", "120", "app:app"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
