@@ -38,7 +38,7 @@ def construct_relations(spot_query):
         type = edge["type"]
 
         # Process 'distance' type
-        if type == "dist":
+        if type == "distance":
             distance = distance_to_meters(
                 edge["value"]
             )  # Convert distance to meters

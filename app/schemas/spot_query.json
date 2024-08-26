@@ -98,7 +98,7 @@
             "properties": {
               "source": { "type": "number" },
               "target": { "type": "number" },
-              "type": { "type": "string", "const": "dist" },
+              "type": { "type": "string", "const": "distance" },
               "value": { "type": "string" }
             },
             "required": ["source", "target", "type", "value"]
