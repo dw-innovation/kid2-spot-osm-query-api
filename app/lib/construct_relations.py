@@ -56,7 +56,7 @@ def construct_relations(spot_query):
         elif type == "contains":
             # Formulate SQL join condition for containment
             condition = sql.SQL(
-                "ST_Contains({source_alias}.transformed_geom, {target_alias}.transformed_geom)"
+                "ST_Within({source_alias}.transformed_geom, {target_alias}.transformed_geom)"
             ).format(
                 source_alias=sql.Identifier(source_name),
                 target_alias=sql.Identifier(target_name),
