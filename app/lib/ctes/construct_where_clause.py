@@ -1,5 +1,5 @@
+import re
 from psycopg2 import sql
-
 
 def construct_cte_where_clause(filters):
     if not filters:
@@ -12,6 +12,12 @@ def construct_cte_where_clause(filters):
         where_filters.insert(0, area_filter)
 
     return sql.SQL(" AND ").join(where_filters)
+
+
+def sanitize_for_regex(value):
+    if isinstance(value, str):
+        return re.sub(r'[^A-Za-z0-9]', '', value)
+    return value
 
 
 def construct_filter(filter):
@@ -29,27 +35,21 @@ def construct_filter(filter):
     operator = filter.get("operator", "operator")
     value = filter.get("value", "value")
 
-    try:
-        if operator in [">", "<"]:
-            value = float(value)
-    except ValueError:
-        print(f"Error converting value '{value}' to integer for key '{key}'.")
-        return ""
-
-    operator_to_sql = {
-        "=": "tags->> {key} = {value}",
-        "~": "LOWER(tags->>{key}) ~ LOWER({value})",
-        ">": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}",
-        "<": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}",
-    }
-
-    sql_template = operator_to_sql.get(operator)
-
-    if value == "***any***":
-        sql_template = "tags ? {key}"
+    if operator == "~":
+        value = sanitize_for_regex(value)
+        sql_template = "LOWER(REGEXP_REPLACE(tags->>{key}, '[^A-Za-z0-9]', '', 'g')) ~ LOWER({value})"
+    else:
+        sql_template = {
+            "=": "tags->> {key} = {value}",
+            ">": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}",
+            "<": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}",
+        }.get(operator)
 
     if not sql_template:
         return ""
+
+    if value == "***any***":
+        sql_template = "tags ? {key}"
 
     return sql.SQL(sql_template).format(
         key=sql.Literal(key),
