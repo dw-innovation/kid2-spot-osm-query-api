@@ -1,6 +1,8 @@
 import re
 from psycopg2 import sql
 
+from ..utils import distance_to_meters
+
 def construct_cte_where_clause(filters):
     if not filters:
         return ""
@@ -35,23 +37,40 @@ def construct_filter(filter):
     operator = filter.get("operator", "operator")
     value = filter.get("value", "value")
 
-    if operator == "~":
-        value = sanitize_for_regex(value)
-        sql_template = "LOWER(REGEXP_REPLACE(tags->>{key}, '[^A-Za-z0-9]', '', 'g')) ~ LOWER({value})"
-    else:
-        sql_template = {
-            "=": "tags->> {key} = {value}",
-            ">": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) > {value}",
-            "<": "CAST(SPLIT_PART(tags->> {key}, ' ', 1) AS FLOAT) < {value}",
-        }.get(operator)
-
-    if not sql_template:
-        return ""
+    if key in ["height", "width", "length"] or operator in [">", "<"]:
+        value = distance_to_meters(value)
 
     if value == "***any***":
-        sql_template = "tags ? {key}"
+        return sql.SQL("tags ? {key}").format(key=sql.Literal(key))
 
-    return sql.SQL(sql_template).format(
-        key=sql.Literal(key),
-        value=sql.Literal(value),
-    )
+    if operator == "~":
+        value = sanitize_for_regex(value)
+        sql_template = sql.SQL(
+            "LOWER(REGEXP_REPLACE(tags->>{key}, '[^A-Za-z0-9]', '', 'g')) ~ LOWER({value})"
+        ).format(
+            key=sql.Literal(key),
+            value=sql.Literal(value)
+        )
+
+    elif operator in [">", "<"]:
+        sql_template = sql.SQL(
+            """
+            CASE 
+                WHEN tags->> {key} ~ '^[0-9]+(\\.[0-9]+)?$'
+                THEN CAST(tags->> {key} AS FLOAT) {operator} {value}
+                ELSE FALSE 
+            END
+            """
+        ).format(
+            key=sql.Literal(key),
+            operator=sql.SQL(operator),
+            value=sql.Literal(value)
+        )
+
+    else:
+        sql_template = sql.SQL("tags->> {key} = {value}").format(
+            key=sql.Literal(key),
+            value=sql.Literal(value)
+        )
+
+    return sql_template
