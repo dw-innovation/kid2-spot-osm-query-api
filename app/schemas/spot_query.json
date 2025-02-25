@@ -41,7 +41,7 @@
         "id": { "type": "number" },
         "filters": {
           "type": "array",
-          "items": { "$ref": "#/definitions/Condition" }
+          "items": { "$ref": "#/definitions/NestedCondition" }
         },
         "type": { "type": "string", "const": "cluster" },
         "minPoints": { "type": "number" },
