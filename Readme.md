@@ -52,3 +52,6 @@ For a visual representation of how the service functions, please refer to the ar
 ![workflow OT++ query service](https://github.com/dw-innovation/kid2-ot-osm-api/assets/6747121/ad5fef02-6e6c-4a0d-97c4-03dfde833122)
 
 
+## Local Setup
+if you receive an error when requirements are being installed.
+Change psycopg2 to psycopg2-binary.
