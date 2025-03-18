@@ -13,7 +13,7 @@ def construct_cluster_cte(node, area):
         set_id = node.get("id", "id")
         set_name = node.get("name", "name")
         cluster_name = f"cluster_{set_id}_{set_name}".replace(" ", "_")
-        filters = construct_cte_where_clause(node.get("filters", []), area)
+        filters = construct_cte_where_clause(node.get("filters", []))
 
         query = sql.SQL(
             """WITH clusters AS (
