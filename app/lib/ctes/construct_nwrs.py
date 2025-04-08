@@ -15,7 +15,7 @@ def construct_nwr_cte(node):
             {set_id} AS set_id,
             ST_Transform(geom, {utm}) AS transformed_geom,
             geom,
-            primitive_type || '/' || node_id AS osm_ids,
+            ARRAY[primitive_type || '/' || node_id] AS osm_ids,
             {set_id} AS set_id,
             {set_name} AS set_name,
             tags,

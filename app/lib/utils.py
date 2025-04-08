@@ -272,7 +272,7 @@ def get_spots(results):
 
         bbox = [minx, miny, maxx, maxy]
         tags = data["tags"]
-        nodes = list(set(data["nodes"]))  # Remove duplicates
+        nodes = list(set(data["nodes"]))  # Remove duplicates """
 
         spots.append({"bbox": bbox, "id": primary_osm_id, "tags": tags, "nodes": nodes})
 

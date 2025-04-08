@@ -195,7 +195,7 @@ def run_spot_query_route():
         # Fetch all results as a list of dictionaries
         results = [dict(record) for record in cursor]
 
-        spots = get_spots(results)
+        # spots = get_spots(results)
         geojson = results_to_geojson(results)
         timer.add_checkpoint("results_transformation_to_geojson")
 
@@ -212,7 +212,7 @@ def run_spot_query_route():
             ),
             **({"area": area_value} if area_value is not None else {}),
             "sets": {"distinct_sets": distinct_set_names, "stats": set_name_counts},
-            "spots": spots,
+            # "spots": spots,
             "timing": timer.get_all_checkpoints(),
             "status": "success",
         }

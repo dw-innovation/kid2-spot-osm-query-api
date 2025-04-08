@@ -150,7 +150,6 @@ def construct_relations(spot_query):
                 subquery.osm_ids, 
                 subquery.geom, 
                 subquery.tags, 
-                array_agg(DISTINCT subquery.primary_osm_id) AS primary_osm_ids,
                 subquery.primitive_type
             FROM ({query}) AS subquery
             GROUP BY subquery.set_name, subquery.osm_ids, subquery.geom, subquery.tags, subquery.primitive_type;"""
