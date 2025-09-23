@@ -1,3 +1,5 @@
+<img width="1280" height="200" alt="Github-Banner_spot" src="https://github.com/user-attachments/assets/5f3402e6-46c8-4bbc-969c-4e2a8691d07f" />
+
 ## Spot OSM Query Service (Dockerized)
 
 This service is an integral component of the Spot application. Its primary functionality revolves around interpreting a graph's intermediate representation and, from there, building a corresponding Postgres query. The subsequent querying is run against the Spot OSM Postgres instance. The results are then returned in GeoJSON format, accompanied by relevant statistics.
